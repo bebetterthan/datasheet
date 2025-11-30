@@ -1,0 +1,122 @@
+# Sources Configuration
+# =====================
+# Detailed configuration for each data source
+
+sources:
+  # HackTricks - Comprehensive security documentation
+  hacktricks:
+    name: "HackTricks"
+    base_url: "https://book.hacktricks.xyz"
+    type: "documentation"
+    enabled: true
+    rate_limit: 2.0
+    selectors:
+      content: ".md-content"
+      title: "h1"
+      code: "pre code"
+    categories_map:
+      "generic-methodologies-and-resources": "general/methodology"
+      "linux-hardening": "privilege_escalation/linux"
+      "windows-hardening": "privilege_escalation/windows"
+      "pentesting-web": "web_security"
+      "network-services-pentesting": "recon/network"
+
+  # CTF Writeups
+  ctf_writeups:
+    name: "CTF Writeups"
+    platforms:
+      ctftime:
+        base_url: "https://ctftime.org"
+        rate_limit: 1.0
+      0xdf:
+        base_url: "https://0xdf.gitlab.io"
+        rate_limit: 2.0
+    type: "writeups"
+    enabled: true
+
+  # Exploit Database
+  exploit_db:
+    name: "Exploit-DB"
+    base_url: "https://www.exploit-db.com"
+    api_url: "https://www.exploit-db.com/search"
+    type: "exploits"
+    enabled: true
+    rate_limit: 1.0
+    selectors:
+      title: ".card-title"
+      content: "#exploit-code"
+      metadata: ".card-body"
+
+  # CVE Database (NVD)
+  cve:
+    name: "NVD CVE Database"
+    base_url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
+    type: "vulnerabilities"
+    enabled: true
+    rate_limit: 0.5 # NVD has strict rate limits
+    filters:
+      min_cvss: 7.0
+      days_back: 365
+
+  # Nuclei Templates
+  nuclei_templates:
+    name: "Nuclei Templates"
+    repo: "projectdiscovery/nuclei-templates"
+    base_url: "https://api.github.com/repos/projectdiscovery/nuclei-templates"
+    raw_url: "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main"
+    type: "templates"
+    enabled: true
+    rate_limit: 1.0
+    categories:
+      - "cves"
+      - "vulnerabilities"
+      - "exposures"
+      - "misconfiguration"
+      - "default-logins"
+      - "takeovers"
+
+  # PayloadsAllTheThings
+  payloads:
+    name: "PayloadsAllTheThings"
+    repo: "swisskyrepo/PayloadsAllTheThings"
+    base_url: "https://api.github.com/repos/swisskyrepo/PayloadsAllTheThings"
+    raw_url: "https://raw.githubusercontent.com/swisskyrepo/PayloadsAllTheThings/master"
+    type: "payloads"
+    enabled: true
+    rate_limit: 1.0
+
+  # OWASP Resources
+  owasp:
+    name: "OWASP"
+    resources:
+      cheatsheets:
+        repo: "OWASP/CheatSheetSeries"
+        path: "cheatsheets"
+        type: "best_practices"
+      wstg:
+        repo: "OWASP/wstg"
+        path: "document"
+        type: "testing_guide"
+      top10:
+        repo: "OWASP/Top10"
+        path: "2021/docs"
+        type: "awareness"
+    type: "documentation"
+    enabled: true
+    rate_limit: 1.0
+
+# GitHub API Configuration
+github:
+  # Token for higher rate limits (optional)
+  # Set via GITHUB_TOKEN environment variable
+  token: ""
+  rate_limit: 5000 # per hour with auth, 60 without
+
+# Domains to exclude (e.g., login pages, admin areas)
+excluded_patterns:
+  - "*/login*"
+  - "*/admin/*"
+  - "*/account/*"
+  - "*.pdf"
+  - "*.zip"
+  - "*.exe"

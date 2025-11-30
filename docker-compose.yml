@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # Main scraper service
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: security-scraper
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    networks:
+      - scraper-network
+    depends_on:
+      - redis
+    command: ["python", "main.py", "scrape", "all"]
+
+  # Redis for caching and rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: scraper-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - scraper-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Optional: Web UI for monitoring (Flower for Celery-like monitoring)
+  # Uncomment if you add task queue support
+  # monitor:
+  #   image: mher/flower:0.9.7
+  #   container_name: scraper-monitor
+  #   ports:
+  #     - "5555:5555"
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://redis:6379/0
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - scraper-network
+
+  # Optional: Jupyter notebook for data analysis
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scraper-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./data:/app/data
+      - ./notebooks:/app/notebooks
+      - ./src:/app/src
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    networks:
+      - scraper-network
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=security123"]
+    profiles:
+      - analysis
+
+  # PostgreSQL for larger scale operations (optional)
+  postgres:
+    image: postgres:16-alpine
+    container_name: scraper-postgres
+    environment:
+      - POSTGRES_USER=scraper
+      - POSTGRES_PASSWORD=scraper_secret
+      - POSTGRES_DB=security_dataset
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - scraper-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scraper"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - production
+
+  # Tor proxy for anonymous scraping (optional)
+  tor:
+    image: dperson/torproxy:latest
+    container_name: scraper-tor
+    ports:
+      - "9050:9050"   # SOCKS proxy
+      - "9051:9051"   # Control port
+    environment:
+      - TOR_NewCircuitPeriod=60
+      - TOR_MaxCircuitDirtiness=600
+    networks:
+      - scraper-network
+    profiles:
+      - anonymous
+
+networks:
+  scraper-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  postgres-data:

@@ -1,0 +1,689 @@
+# Research Guide: Red Team AI Agent Dataset Requirements
+
+## 🎯 Objective
+
+Saya sedang membangun **AI Red Team Agent** yang akan di-fine-tune untuk melakukan **offensive security testing** seperti:
+- Magecart-style attack detection & simulation
+- Web application vulnerability hunting
+- Payment security assessment
+- E-commerce security testing
+
+Saya butuh bantuan untuk:
+1. **Mengidentifikasi** semua jenis dataset yang diperlukan
+2. **Menemukan sumber** dataset yang legitimate dan legal
+3. **Menstrukturkan** format dataset untuk fine-tuning LLM
+4. **Membuat checklist** completeness dataset
+
+Agent ini akan digunakan secara **LEGAL** dengan:
+- Authorization/consent dari target
+- Gate Zero security validation
+- Output berupa vulnerability report, bukan actual exploitation
+- Tujuan defensive (find vulnerabilities before real attackers)
+
+---
+
+## 📋 Task 1: Dataset Category Identification
+
+Tolong identifikasi dan jelaskan **semua kategori dataset** yang diperlukan untuk melatih AI Red Team Agent yang fokus pada Magecart-style attacks dan web security. 
+
+Untuk setiap kategori, jelaskan:
+1. **Nama kategori**
+2. **Deskripsi** - apa isi dataset ini
+3. **Kenapa penting** - bagaimana ini membantu AI agent
+4. **Contoh data points** - 2-3 contoh konkret isi datanya
+5. **Estimasi jumlah samples** - berapa banyak yang ideal
+6. **Priority level** - Critical / High / Medium / Low
+
+### Format Output yang Diharapkan:
+
+```yaml
+categories:
+  - name: "Category Name"
+    description: "..."
+    importance: "..."
+    example_data_points:
+      - "Example 1"
+      - "Example 2"
+    estimated_samples: 500
+    priority: "Critical"
+```
+
+### Kategori yang HARUS di-cover (minimal):
+
+1. **Attacker Methodology & Mindset**
+   - Bagaimana attacker berpikir dan merencanakan serangan
+   
+2. **Reconnaissance Techniques**
+   - Information gathering, target profiling
+   
+3. **Vulnerability Identification**
+   - Cara menemukan celah keamanan
+   
+4. **Exploitation Techniques**
+   - Teknik-teknik eksploitasi (XSS, SQLi, script injection, dll)
+   
+5. **Magecart-Specific Techniques**
+   - Skimmer development, injection methods, obfuscation
+   
+6.  **Evasion & Anti-Detection**
+   - Cara menghindari WAF, security tools, detection
+   
+7. **Post-Exploitation**
+   - Data exfiltration, persistence, lateral movement
+   
+8. **Real-World Case Studies**
+   - Analisis breach nyata (British Airways, Ticketmaster, dll)
+   
+9. **Tool Usage & Integration**
+   - Cara menggunakan security tools (nmap, burp, nuclei, dll)
+   
+10. **Detection & Defense**
+    - Untuk memahami apa yang harus di-bypass dan bagaimana defender berpikir
+    
+11. **Proof of Concept Development**
+    - Cara membuat PoC yang proper dan professional
+    
+12. **Reporting & Documentation**
+    - Cara menulis vulnerability report yang professional
+
+---
+
+## 📋 Task 2: Data Source Identification
+
+Untuk setiap kategori di atas, tolong identifikasi **sumber data yang legitimate** untuk mengumpulkan training data. 
+
+### Kriteria Sumber yang Valid:
+- ✅ Publicly available
+- ✅ Legal untuk digunakan
+- ✅ Authoritative/reliable
+- ✅ Technical depth yang cukup
+- ✅ Up-to-date (preferably 2020-2024)
+
+### Format Output yang Diharapkan:
+
+```yaml
+sources:
+  - name: "Source Name"
+    url: "https://..."
+    type: "Documentation / Blog / Repository / Database / Research Paper"
+    categories_covered:
+      - "Category 1"
+      - "Category 2"
+    data_format: "HTML / Markdown / JSON / PDF"
+    scraping_difficulty: "Easy / Medium / Hard"
+    estimated_data_points: 1000
+    quality_rating: "High / Medium / Low"
+    notes: "Additional notes about this source"
+```
+
+### Sumber yang HARUS di-evaluate (minimal):
+
+**Documentation & Guides:**
+1. HackTricks (book. hacktricks.xyz)
+2. OWASP Testing Guide
+3. OWASP Cheatsheet Series
+4. PortSwigger Web Security Academy
+5. MITRE ATT&CK Framework
+
+**Payload & Technique Collections:**
+6. PayloadsAllTheThings (GitHub)
+7. SecLists (GitHub)
+8.  Nuclei Templates (GitHub)
+9. Exploit-DB
+
+**Case Studies & Research:**
+10. Security research blogs
+11. Conference presentations (BlackHat, DEF CON)
+12. Breach analysis reports
+13. CVE databases (NVD, CVE Details)
+
+**CTF & Practical:**
+14. CTFTime writeups
+15. HackTheBox writeups
+16. TryHackMe writeups
+17. VulnHub writeups
+
+**Magecart-Specific:**
+18. RiskIQ/Recorded Future reports
+19. Sansec research
+20. Payment security blogs
+
+---
+
+## 📋 Task 3: Dataset Schema Definition
+
+Tolong definisikan **schema/struktur** untuk dataset fine-tuning yang comprehensive. 
+
+### Primary Format: Alpaca-style JSON
+
+```json
+{
+  "instruction": "string - task atau pertanyaan",
+  "input": "string - context tambahan (optional)",
+  "output": "string - jawaban yang diharapkan",
+  "metadata": {
+    "category": "string",
+    "subcategory": "string",
+    "difficulty": "beginner | intermediate | advanced | expert",
+    "tags": ["array", "of", "tags"],
+    "source": "string - original source",
+    "requires_authorization": true,
+    "potential_harm": "none | low | medium | high",
+    "legal_notes": "string"
+  }
+}
+```
+
+### Untuk setiap kategori dataset, definisikan:
+
+1. **Instruction templates** - Pattern pertanyaan yang umum
+2. **Expected output format** - Struktur jawaban yang diharapkan
+3. **Quality criteria** - Apa yang membuat data point ini berkualitas
+4. **Red flags** - Apa yang harus dihindari
+
+### Contoh yang diharapkan untuk setiap kategori:
+
+```yaml
+category: "Magecart Skimmer Analysis"
+instruction_templates:
+  - "Analyze this JavaScript code for potential Magecart skimmer patterns"
+  - "Explain how this skimmer code works and how to detect it"
+  - "What obfuscation techniques are used in this code?"
+  
+expected_output_format:
+  - analysis_summary: "Brief overview of findings"
+  - technique_identification: "What techniques are used"
+  - code_walkthrough: "Step-by-step explanation"
+  - detection_methods: "How to detect this"
+  - remediation: "How to fix/prevent"
+  
+quality_criteria:
+  - "Technical accuracy"
+  - "Complete explanation"
+  - "Actionable detection methods"
+  - "Clear remediation steps"
+  
+red_flags:
+  - "Incomplete analysis"
+  - "Missing detection methods"
+  - "Encouraging malicious use without defense context"
+```
+
+---
+
+## 📋 Task 4: Magecart-Specific Dataset Requirements
+
+Karena fokus utama adalah **Magecart-style attacks**, tolong buat detail khusus untuk dataset ini. 
+
+### 4.1 Magecart Attack Lifecycle Dataset
+
+```
+MAGECART ATTACK LIFECYCLE:
+═══════════════════════════════════════════════════════════
+
+Stage 1: Target Selection & Reconnaissance
+Stage 2: Initial Access / Compromise
+Stage 3: Skimmer Development
+Stage 4: Skimmer Injection
+Stage 5: Data Exfiltration
+Stage 6: Evasion & Persistence
+Stage 7: Monetization (for understanding, not teaching)
+```
+
+Untuk setiap stage, identifikasi:
+- Techniques yang digunakan
+- Data points yang perlu di-collect
+- Contoh Q&A pairs
+- Detection/defense perspective
+
+### 4.2 Skimmer Code Dataset
+
+Kumpulkan samples untuk:
+
+```yaml
+skimmer_types:
+  - name: "Form Grabber"
+    description: "Intercept form submissions"
+    detection_patterns: [...]
+    
+  - name: "Keylogger-style"
+    description: "Capture keystrokes on payment fields"
+    detection_patterns: [...]
+    
+  - name: "Fake Payment Form"
+    description: "Overlay fake form on legitimate checkout"
+    detection_patterns: [...]
+    
+  - name: "Script Injection via XSS"
+    description: "Inject skimmer through XSS vulnerability"
+    detection_patterns: [...]
+    
+  - name: "Supply Chain Attack"
+    description: "Compromise third-party scripts"
+    detection_patterns: [...]
+```
+
+### 4. 3 Obfuscation Techniques Dataset
+
+```yaml
+obfuscation_techniques:
+  - name: "String Encoding"
+    methods: ["Base64", "Hex", "Char codes", "Custom encoding"]
+    samples_needed: 200
+    
+  - name: "Code Structure Obfuscation"
+    methods: ["Variable renaming", "Dead code injection", "Control flow flattening"]
+    samples_needed: 200
+    
+  - name: "Anti-Analysis Techniques"
+    methods: ["Debugger detection", "VM detection", "Timing checks"]
+    samples_needed: 150
+    
+  - name: "Domain Obfuscation"
+    methods: ["Typosquatting", "Homograph attacks", "Dynamic DNS"]
+    samples_needed: 100
+```
+
+### 4.4 Real Magecart Incidents Dataset
+
+```yaml
+incidents_to_analyze:
+  - name: "British Airways 2018"
+    data_points:
+      - Attack vector analysis
+      - Skimmer code breakdown
+      - Timeline of attack
+      - Detection failure analysis
+      - Remediation steps taken
+      
+  - name: "Ticketmaster 2018"
+    data_points: [...]
+    
+  - name: "Newegg 2018"
+    data_points: [...]
+    
+  # Continue for 20+ major incidents
+```
+
+---
+
+## 📋 Task 5: Exploitation Techniques Dataset
+
+### 5.1 Web Vulnerabilities (Entry Points for Magecart)
+
+```yaml
+vulnerability_categories:
+  - name: "Cross-Site Scripting (XSS)"
+    subcategories:
+      - "Reflected XSS"
+      - "Stored XSS"
+      - "DOM-based XSS"
+      - "Mutation XSS"
+    samples_per_subcategory: 100-200
+    must_include:
+      - "Detection techniques"
+      - "Exploitation steps"
+      - "Payload variations"
+      - "WAF bypass methods"
+      - "Remediation"
+    
+  - name: "SQL Injection"
+    subcategories:
+      - "Union-based"
+      - "Error-based"
+      - "Blind SQLi"
+      - "Time-based"
+    samples_per_subcategory: 100-200
+    
+  - name: "Remote Code Execution"
+    subcategories:
+      - "Command Injection"
+      - "File Upload"
+      - "Deserialization"
+      - "Template Injection"
+    samples_per_subcategory: 100-150
+    
+  - name: "Access Control"
+    subcategories:
+      - "IDOR"
+      - "Privilege Escalation"
+      - "Authentication Bypass"
+    samples_per_subcategory: 100-150
+    
+  - name: "Client-Side Attacks"
+    subcategories:
+      - "CSRF"
+      - "Clickjacking"
+      - "DOM manipulation"
+      - "Prototype pollution"
+    samples_per_subcategory: 80-120
+```
+
+### 5.2 Security Bypass Techniques
+
+```yaml
+bypass_categories:
+  - name: "WAF Bypass"
+    techniques:
+      - "Encoding variations"
+      - "Case manipulation"
+      - "Comment injection"
+      - "HTTP Parameter Pollution"
+      - "Chunked transfer"
+    samples_needed: 300
+    
+  - name: "CSP Bypass"
+    techniques:
+      - "Unsafe-inline exploitation"
+      - "JSONP endpoints"
+      - "Base-uri manipulation"
+      - "Dangling markup"
+    samples_needed: 150
+    
+  - name: "Authentication Bypass"
+    techniques:
+      - "JWT attacks"
+      - "Session fixation"
+      - "OAuth flaws"
+      - "Password reset flaws"
+    samples_needed: 200
+```
+
+---
+
+## 📋 Task 6: Tool Integration Dataset
+
+### Security Tools yang harus di-cover:
+
+```yaml
+tools:
+  reconnaissance:
+    - name: "Nmap"
+      data_points:
+        - "Basic scanning commands"
+        - "Service enumeration"
+        - "Script scanning (NSE)"
+        - "Output parsing"
+        - "Evasion techniques"
+      samples: 200
+      
+    - name: "Subfinder/Amass"
+      data_points:
+        - "Subdomain enumeration"
+        - "Configuration options"
+        - "Integration with other tools"
+      samples: 100
+      
+  scanning:
+    - name: "Nuclei"
+      data_points:
+        - "Template usage"
+        - "Custom template creation"
+        - "Severity filtering"
+        - "Output parsing"
+      samples: 200
+      
+    - name: "Burp Suite"
+      data_points:
+        - "Proxy setup"
+        - "Scanner usage"
+        - "Intruder attacks"
+        - "Extension usage"
+      samples: 250
+      
+  exploitation:
+    - name: "SQLMap"
+      data_points:
+        - "Basic usage"
+        - "Tamper scripts"
+        - "Data extraction"
+        - "WAF bypass"
+      samples: 200
+      
+    - name: "XSStrike"
+      data_points:
+        - "XSS detection"
+        - "Payload generation"
+        - "WAF detection"
+      samples: 100
+      
+  post_exploitation:
+    - name: "Metasploit"
+      data_points:
+        - "Module usage"
+        - "Payload generation"
+        - "Session management"
+      samples: 200
+```
+
+---
+
+## 📋 Task 7: Defense & Detection Dataset
+
+**PENTING:** AI Agent harus juga paham defense untuk:
+1. Memahami apa yang harus di-bypass
+2.  Memberikan remediation yang proper
+3. Berpikir seperti defender juga
+
+```yaml
+defense_categories:
+  - name: "Web Application Firewalls (WAF)"
+    data_points:
+      - "Common WAF rules"
+      - "Detection patterns"
+      - "Bypass techniques (for testing)"
+      - "Configuration best practices"
+    samples: 200
+    
+  - name: "Content Security Policy (CSP)"
+    data_points:
+      - "CSP directives"
+      - "Proper implementation"
+      - "Common misconfigurations"
+      - "Bypass techniques (for testing)"
+    samples: 150
+    
+  - name: "Magecart Detection"
+    data_points:
+      - "Skimmer detection patterns"
+      - "JavaScript analysis techniques"
+      - "Network monitoring"
+      - "File integrity monitoring"
+    samples: 200
+    
+  - name: "Secure Coding Practices"
+    data_points:
+      - "Input validation"
+      - "Output encoding"
+      - "Secure payment integration"
+      - "Third-party script security"
+    samples: 200
+```
+
+---
+
+## 📋 Task 8: Proof of Concept (PoC) Dataset
+
+### PoC Development Standards
+
+```yaml
+poc_categories:
+  - name: "XSS PoC"
+    required_elements:
+      - "Harmless payload (alert/console. log)"
+      - "Step-by-step reproduction"
+      - "Screenshot evidence"
+      - "Impact explanation"
+      - "Remediation steps"
+    samples: 200
+    
+  - name: "SQLi PoC"
+    required_elements:
+      - "Sample data extraction (limited)"
+      - "Masked sensitive data"
+      - "Impact calculation"
+      - "Remediation steps"
+    samples: 200
+    
+  - name: "Magecart Injection PoC"
+    required_elements:
+      - "Harmless skimmer simulation"
+      - "Injection point identification"
+      - "Impact demonstration"
+      - "Detection methods"
+      - "Remediation steps"
+    samples: 150
+    
+poc_ethics:
+  - "Always use harmless payloads"
+  - "Limit data extraction to samples"
+  - "Mask all sensitive data"
+  - "Include remediation"
+  - "Document authorization"
+```
+
+---
+
+## 📋 Task 9: Reporting Dataset
+
+### Professional Security Report Templates
+
+```yaml
+report_types:
+  - name: "Vulnerability Report"
+    sections:
+      - "Executive Summary"
+      - "Vulnerability Details"
+      - "Proof of Concept"
+      - "Impact Assessment"
+      - "CVSS Scoring"
+      - "Remediation Steps"
+      - "References"
+    samples: 150
+    
+  - name: "Penetration Test Report"
+    sections:
+      - "Engagement Overview"
+      - "Methodology"
+      - "Findings Summary"
+      - "Detailed Findings"
+      - "Risk Matrix"
+      - "Recommendations"
+    samples: 100
+    
+  - name: "Incident Analysis Report"
+    sections:
+      - "Incident Timeline"
+      - "Attack Vector Analysis"
+      - "Impact Assessment"
+      - "Root Cause Analysis"
+      - "Lessons Learned"
+    samples: 100
+```
+
+---
+
+## 📋 Task 10: Dataset Quality Checklist
+
+### Final Checklist untuk Dataset Completeness
+
+```yaml
+checklist:
+  coverage:
+    - "[ ] Semua attack lifecycle stages ter-cover"
+    - "[ ] Semua major vulnerability types ter-cover"
+    - "[ ] Semua common tools ter-cover"
+    - "[ ] Defense perspective ter-include"
+    - "[ ] Real-world case studies ter-include"
+    
+  quality:
+    - "[ ] Technical accuracy verified"
+    - "[ ] Up-to-date information (2020+)"
+    - "[ ] Consistent formatting"
+    - "[ ] No duplicates"
+    - "[ ] Balanced difficulty levels"
+    
+  ethics:
+    - "[ ] All data legally obtained"
+    - "[ ] No actual malware/harmful code"
+    - "[ ] Defense/remediation always included"
+    - "[ ] Authorization requirements noted"
+    - "[ ] Ethical guidelines embedded"
+    
+  balance:
+    - "[ ] Beginner: 20%"
+    - "[ ] Intermediate: 40%"
+    - "[ ] Advanced: 30%"
+    - "[ ] Expert: 10%"
+```
+
+---
+
+## 📊 Expected Output Summary
+
+Setelah menyelesaikan semua tasks di atas, tolong provide:
+
+1. **Complete category list** dengan semua details
+2. **Source mapping** - mana source untuk kategori mana
+3. **Sample count estimation** per kategori
+4. **Priority ranking** untuk collection order
+5. **Timeline estimation** untuk data collection
+6. **Quality assurance checklist**
+
+### Target Dataset Size:
+
+```yaml
+target_samples:
+  minimum_viable: 5000
+  recommended: 15000
+  ideal: 30000+
+  
+distribution:
+  attacker_methodology: 15%
+  vulnerability_techniques: 25%
+  magecart_specific: 20%
+  tool_usage: 15%
+  defense_detection: 10%
+  poc_development: 10%
+  reporting: 5%
+```
+
+---
+
+## ⚠️ Ethical Boundaries
+
+Semua dataset HARUS mengikuti prinsip:
+
+```yaml
+ethical_guidelines:
+  must_include:
+    - "Authorization requirements untuk setiap technique"
+    - "Legal disclaimer"
+    - "Defensive perspective"
+    - "Remediation untuk setiap vulnerability"
+    
+  must_exclude:
+    - "Actual working malware"
+    - "Real stolen data"
+    - "Techniques tanpa defensive value"
+    - "Content yang encourage illegal activity tanpa authorization"
+    
+  context:
+    - "Semua offensive techniques dalam konteks authorized testing"
+    - "Goal: Find vulnerabilities before real attackers"
+    - "Output: Reports dan recommendations, bukan actual exploitation"
+```
+
+---
+
+## 🚀 Next Steps
+
+Setelah dataset requirements clear, saya akan:
+
+1. **Build scraper** untuk collect data dari identified sources
+2. **Create data processing pipeline** untuk convert ke Alpaca format
+3. **Implement quality checks** sesuai checklist
+4. **Fine-tune model** dengan collected dataset
+5. **Evaluate dan iterate**
+
+Tolong mulai dengan **Task 1** dan lanjut secara sequential. 

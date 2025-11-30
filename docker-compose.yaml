@@ -1,0 +1,76 @@
+# Security Dataset Scraper - Docker Compose Configuration
+# =======================================================
+
+services:
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: security-scraper
+    volumes:
+      # Mount data directory for persistence
+      - ./data:/app/data
+      # Mount config for customization
+      - ./config:/app/config:ro
+      # Mount cache for resume capability
+      - ./.cache:/app/.cache
+    environment:
+      # GitHub token for higher rate limits
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      # OpenAI API key for LLM augmentation (optional)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # Proxy settings (optional)
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+    # Run scraper with default all sources
+    command: ["run", "--all", "--limit", "100"]
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    # Restart policy
+    restart: "no"
+    # Network settings
+    networks:
+      - scraper-net
+
+  # Optional: Redis for distributed rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: scraper-redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - scraper-net
+    profiles:
+      - distributed
+
+networks:
+  scraper-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+
+# Usage Examples:
+# ===============
+#
+# Build and run full pipeline:
+#   docker compose up --build
+#
+# Run specific command:
+#   docker compose run scraper scrape --source hacktricks --limit 50
+#
+# Run with custom config:
+#   docker compose run -v ./my-config.yaml:/app/config/config.yaml:ro scraper run --all
+#
+# Interactive shell:
+#   docker compose run --entrypoint /bin/bash scraper
+#
+# View stats:
+#   docker compose run scraper stats -i /app/data/dataset
