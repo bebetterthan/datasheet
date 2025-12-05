@@ -1,0 +1,359 @@
+# API Security Assessment Workflow
+# =================================
+# Specialized workflow for REST API security testing
+
+name: api_security
+description: "Comprehensive API security assessment"
+version: "1.0.0"
+estimated_duration: "20-40 minutes"
+
+metadata:
+  author: "RedTeam Agent"
+  category: "api-security"
+  risk_level: "medium"
+  tags:
+    - "api"
+    - "rest"
+    - "authentication"
+    - "authorization"
+
+# Input parameters
+parameters:
+  base_url:
+    type: string
+    required: true
+    description: "API base URL (e.g., https://api.example.com)"
+
+  api_spec:
+    type: string
+    required: false
+    description: "Path to OpenAPI/Swagger specification"
+
+  auth_type:
+    type: string
+    default: "none"
+    allowed_values:
+      - "none"
+      - "bearer"
+      - "basic"
+      - "api_key"
+      - "oauth2"
+    description: "Authentication type"
+
+  auth_token:
+    type: string
+    required: false
+    sensitive: true
+    description: "Authentication token/credentials"
+
+  auth_header:
+    type: string
+    default: "Authorization"
+    description: "Custom authentication header name"
+
+  test_auth_bypass:
+    type: boolean
+    default: true
+    description: "Test for authentication bypass"
+
+  test_idor:
+    type: boolean
+    default: true
+    description: "Test for IDOR vulnerabilities"
+
+  rate_limit:
+    type: integer
+    default: 50
+    description: "Requests per second limit"
+
+# Variables
+variables:
+  common_api_paths:
+    - "/api"
+    - "/api/v1"
+    - "/api/v2"
+    - "/api/v3"
+    - "/rest"
+    - "/graphql"
+    - "/swagger"
+    - "/openapi"
+
+  auth_headers:
+    bearer: "Authorization: Bearer {{auth_token}}"
+    basic: "Authorization: Basic {{auth_token}}"
+    api_key: "{{auth_header}}: {{auth_token}}"
+
+# Workflow steps
+steps:
+  # Discovery Phase
+  - id: api_discovery
+    name: "API Discovery"
+    description: "Discover API endpoints and documentation"
+    parallel: true
+    substeps:
+      - id: check_spec_endpoints
+        name: "Check Specification Endpoints"
+        tool: http_client
+        params:
+          urls:
+            - "{{base_url}}/swagger.json"
+            - "{{base_url}}/swagger.yaml"
+            - "{{base_url}}/openapi.json"
+            - "{{base_url}}/openapi.yaml"
+            - "{{base_url}}/api-docs"
+            - "{{base_url}}/v3/api-docs"
+            - "{{base_url}}/.well-known/openapi.json"
+          method: GET
+          timeout: 10
+        outputs:
+          - spec_found
+          - spec_content
+
+      - id: fuzz_api_paths
+        name: "Fuzz API Paths"
+        tool: ffuf
+        params:
+          url: "{{base_url}}/FUZZ"
+          wordlist: "api-endpoints"
+          extensions: []
+          filter_codes: [404]
+          rate_limit: "{{rate_limit}}"
+        outputs:
+          - discovered_endpoints
+
+      - id: graphql_check
+        name: "GraphQL Detection"
+        tool: http_client
+        params:
+          url: "{{base_url}}/graphql"
+          method: POST
+          body: '{"query": "{ __schema { types { name } } }"}'
+          headers:
+            Content-Type: "application/json"
+        outputs:
+          - is_graphql
+          - schema
+
+  # Authentication Testing
+  - id: auth_testing
+    name: "Authentication Testing"
+    description: "Test authentication mechanisms"
+    condition: "{{test_auth_bypass}}"
+    depends_on:
+      - api_discovery
+    steps:
+      - id: no_auth_test
+        name: "Test Without Authentication"
+        tool: http_client
+        params:
+          urls: "{{discovered_endpoints}}"
+          method: GET
+          omit_auth: true
+        outputs:
+          - unprotected_endpoints
+
+      - id: weak_token_test
+        name: "Weak Token Testing"
+        tool: http_client
+        params:
+          urls: "{{discovered_endpoints}}"
+          method: GET
+          headers:
+            Authorization: "Bearer invalid_token"
+        outputs:
+          - token_validation_results
+
+      - id: jwt_analysis
+        name: "JWT Analysis"
+        tool: jwt_analyzer
+        condition: "{{auth_type}} == 'bearer'"
+        params:
+          token: "{{auth_token}}"
+          test_none_algorithm: true
+          test_weak_secrets: true
+        outputs:
+          - jwt_vulnerabilities
+
+  # Authorization Testing (IDOR)
+  - id: idor_testing
+    name: "IDOR Testing"
+    description: "Test for Insecure Direct Object References"
+    condition: "{{test_idor}}"
+    depends_on:
+      - api_discovery
+    steps:
+      - id: identify_id_params
+        name: "Identify ID Parameters"
+        tool: pattern_matcher
+        params:
+          content: "{{discovered_endpoints}}"
+          patterns:
+            - "/[a-zA-Z]+/([0-9]+)"
+            - "[?&]id=([0-9]+)"
+            - "[?&]user_id=([0-9]+)"
+            - "[?&]account_id=([0-9]+)"
+        outputs:
+          - id_parameters
+
+      - id: test_idor
+        name: "Test IDOR"
+        tool: idor_tester
+        params:
+          endpoints: "{{id_parameters}}"
+          test_values:
+            - "1"
+            - "0"
+            - "-1"
+            - "999999"
+          auth_header: "{{auth_headers[auth_type]}}"
+        outputs:
+          - idor_findings
+
+  # Input Validation Testing
+  - id: input_validation
+    name: "Input Validation Testing"
+    description: "Test API input validation"
+    depends_on:
+      - api_discovery
+    steps:
+      - id: injection_test
+        name: "Injection Testing"
+        tool: api_fuzzer
+        params:
+          endpoints: "{{discovered_endpoints}}"
+          payloads:
+            sql: ["'", '"', "1' OR '1'='1", "1; DROP TABLE users--"]
+            nosql: ['{"$gt": ""}', '{"$ne": null}']
+            cmd: ["; ls", "| cat /etc/passwd", "`whoami`"]
+            xxe: ['<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>']
+          auth_header: "{{auth_headers[auth_type]}}"
+        outputs:
+          - injection_findings
+
+      - id: parameter_pollution
+        name: "Parameter Pollution"
+        tool: http_client
+        params:
+          endpoints: "{{discovered_endpoints}}"
+          test_duplicate_params: true
+        outputs:
+          - pollution_findings
+
+  # Rate Limiting & DoS
+  - id: rate_limit_test
+    name: "Rate Limiting Test"
+    description: "Test API rate limiting"
+    depends_on:
+      - api_discovery
+    steps:
+      - id: check_rate_limit
+        name: "Rate Limit Check"
+        tool: rate_limit_tester
+        params:
+          endpoint: "{{base_url}}/api/v1/status"
+          requests: 100
+          interval: 1 # 1 second
+        outputs:
+          - rate_limit_exists
+          - requests_before_limit
+          - rate_limit_headers
+
+  # Security Headers & CORS
+  - id: security_config
+    name: "Security Configuration"
+    description: "Check security configurations"
+    depends_on:
+      - api_discovery
+    steps:
+      - id: cors_test
+        name: "CORS Configuration Test"
+        tool: cors_tester
+        params:
+          url: "{{base_url}}"
+          test_origins:
+            - "https://evil.com"
+            - "null"
+            - "{{base_url}}"
+        outputs:
+          - cors_misconfig
+
+      - id: header_check
+        name: "Security Headers Check"
+        tool: header_scanner
+        params:
+          url: "{{base_url}}"
+        outputs:
+          - missing_headers
+
+      - id: method_test
+        name: "HTTP Methods Test"
+        tool: http_client
+        params:
+          url: "{{base_url}}"
+          methods: ["OPTIONS", "TRACE", "DEBUG", "CONNECT"]
+        outputs:
+          - allowed_methods
+
+  # Data Exposure
+  - id: data_exposure
+    name: "Data Exposure Testing"
+    description: "Check for sensitive data exposure"
+    depends_on:
+      - api_discovery
+    steps:
+      - id: verbose_errors
+        name: "Verbose Error Check"
+        tool: error_tester
+        params:
+          endpoints: "{{discovered_endpoints}}"
+          trigger_errors: true
+        outputs:
+          - error_messages
+          - stack_traces
+
+      - id: sensitive_data
+        name: "Sensitive Data in Responses"
+        tool: pattern_matcher
+        params:
+          responses: "{{all_responses}}"
+          patterns: "sensitive_data"
+        outputs:
+          - exposed_data
+
+# Analysis
+analysis:
+  - id: analyze_findings
+    name: "Analyze All Findings"
+    tool: api_analyzer
+    params:
+      auth_findings: "{{auth_testing.results}}"
+      idor_findings: "{{idor_testing.results}}"
+      injection_findings: "{{input_validation.results}}"
+      config_findings: "{{security_config.results}}"
+      exposure_findings: "{{data_exposure.results}}"
+    outputs:
+      - risk_score
+      - prioritized_findings
+
+# Output configuration
+output:
+  format: "json"
+  sections:
+    - executive_summary
+    - api_overview
+    - authentication_findings
+    - authorization_findings
+    - injection_findings
+    - configuration_findings
+    - data_exposure_findings
+    - risk_assessment
+    - recommendations
+
+# Report
+report:
+  template: "api_security_report"
+  formats:
+    - json
+    - markdown
+  include_curl_examples: true
+  include_remediation: true

@@ -1,0 +1,280 @@
+# Full Security Assessment Workflow
+# ==================================
+# Comprehensive security assessment for web applications
+
+name: full_assessment
+description: "Complete web application security assessment"
+version: "1.0.0"
+estimated_duration: "30-60 minutes"
+
+metadata:
+  author: "RedTeam Agent"
+  category: "assessment"
+  risk_level: "medium"
+  tags:
+    - "comprehensive"
+    - "web-security"
+    - "full-scan"
+
+# Input parameters
+parameters:
+  target:
+    type: string
+    required: true
+    description: "Target URL"
+
+  depth:
+    type: string
+    default: "standard"
+    allowed_values:
+      - "light"
+      - "standard"
+      - "deep"
+    description: "Assessment depth level"
+
+  skip_bruteforce:
+    type: boolean
+    default: false
+    description: "Skip directory bruteforcing"
+
+  wordlist_size:
+    type: string
+    default: "medium"
+    allowed_values:
+      - "small"
+      - "medium"
+      - "large"
+    description: "Wordlist size for fuzzing"
+
+  custom_headers:
+    type: object
+    default: {}
+    description: "Custom HTTP headers"
+
+# Phase 1: Reconnaissance
+phases:
+  - id: recon_phase
+    name: "Reconnaissance Phase"
+    description: "Information gathering"
+    parallel: true
+    steps:
+      - id: dns_enum
+        name: "DNS Enumeration"
+        tool: dns
+        params:
+          domain: "{{target|domain}}"
+          record_types: ["A", "AAAA", "MX", "TXT", "NS", "CNAME"]
+
+      - id: whois_info
+        name: "WHOIS Information"
+        tool: whois
+        params:
+          domain: "{{target|domain}}"
+
+      - id: tech_fingerprint
+        name: "Technology Fingerprinting"
+        tool: tech_detect
+        params:
+          url: "{{target}}"
+
+      - id: initial_request
+        name: "Initial Request"
+        tool: http_client
+        params:
+          url: "{{target}}"
+          method: GET
+
+  # Phase 2: Infrastructure Analysis
+  - id: infra_phase
+    name: "Infrastructure Analysis"
+    description: "Analyze target infrastructure"
+    depends_on:
+      - recon_phase
+    steps:
+      - id: port_scan
+        name: "Port Scan"
+        tool: nmap
+        params:
+          target: "{{target|host}}"
+          ports: "top-1000"
+          scripts: ["http-headers", "ssl-cert"]
+
+      - id: ssl_analysis
+        name: "SSL/TLS Analysis"
+        tool: ssl_scanner
+        params:
+          host: "{{target|host}}"
+          port: 443
+          check_vulnerabilities: true
+
+      - id: header_analysis
+        name: "Security Headers Analysis"
+        tool: header_scanner
+        params:
+          url: "{{target}}"
+          check_cookies: true
+
+  # Phase 3: Content Discovery
+  - id: discovery_phase
+    name: "Content Discovery"
+    description: "Discover hidden content and endpoints"
+    depends_on:
+      - infra_phase
+    condition: "not {{skip_bruteforce}}"
+    steps:
+      - id: dir_bruteforce
+        name: "Directory Bruteforce"
+        tool: ffuf
+        params:
+          url: "{{target}}/FUZZ"
+          wordlist: "{{wordlist_size}}"
+          extensions: [".php", ".html", ".js", ".json", ".xml", ".txt"]
+          filter_codes: [404]
+          rate_limit: 100
+
+      - id: api_discovery
+        name: "API Endpoint Discovery"
+        tool: ffuf
+        condition: "{{depth}} in ['standard', 'deep']"
+        params:
+          url: "{{target}}/api/FUZZ"
+          wordlist: "api-endpoints"
+          filter_codes: [404]
+
+      - id: backup_files
+        name: "Backup File Check"
+        tool: gobuster
+        params:
+          url: "{{target}}"
+          wordlist: "backup-files"
+          extensions: [".bak", ".old", ".backup", ".zip", ".tar.gz"]
+
+  # Phase 4: Vulnerability Scanning
+  - id: vuln_phase
+    name: "Vulnerability Scanning"
+    description: "Active vulnerability scanning"
+    depends_on:
+      - discovery_phase
+    steps:
+      - id: nuclei_scan
+        name: "Nuclei Vulnerability Scan"
+        tool: nuclei
+        params:
+          target: "{{target}}"
+          templates:
+            - "cves"
+            - "exposures"
+            - "misconfiguration"
+            - "vulnerabilities"
+          severity: ["critical", "high", "medium"]
+          rate_limit: 50
+
+      - id: xss_check
+        name: "XSS Detection"
+        tool: pattern_matcher
+        condition: "{{depth}} == 'deep'"
+        params:
+          content: "{{discovery_phase.results}}"
+          patterns: "xss_patterns"
+
+      - id: sqli_check
+        name: "SQL Injection Detection"
+        tool: pattern_matcher
+        condition: "{{depth}} == 'deep'"
+        params:
+          content: "{{discovery_phase.results}}"
+          patterns: "sqli_patterns"
+
+  # Phase 5: JavaScript Analysis
+  - id: js_phase
+    name: "JavaScript Analysis"
+    description: "Analyze JavaScript files for vulnerabilities"
+    depends_on:
+      - discovery_phase
+    steps:
+      - id: js_analysis
+        name: "JavaScript Security Analysis"
+        tool: js_analyzer
+        params:
+          url: "{{target}}"
+          analyze_external: true
+          check_secrets: true
+          check_sinks: true
+
+      - id: csp_analysis
+        name: "CSP Analysis"
+        tool: csp_analyzer
+        params:
+          url: "{{target}}"
+
+      - id: sensitive_data
+        name: "Sensitive Data Detection"
+        tool: pattern_matcher
+        params:
+          content: "{{js_phase.js_analysis.content}}"
+          patterns: "sensitive_data"
+
+  # Phase 6: Response Analysis
+  - id: analysis_phase
+    name: "Response Analysis"
+    description: "Analyze all collected responses"
+    depends_on:
+      - vuln_phase
+      - js_phase
+    steps:
+      - id: response_analysis
+        name: "Comprehensive Response Analysis"
+        tool: response_analyzer
+        params:
+          responses: "{{all_responses}}"
+          check_sensitive_data: true
+          check_error_messages: true
+
+      - id: risk_assessment
+        name: "Risk Assessment"
+        tool: risk_calculator
+        params:
+          findings: "{{all_findings}}"
+          asset_value: "high"
+
+# Output configuration
+output:
+  format: "json"
+  include_raw_data: true
+  sections:
+    - executive_summary
+    - methodology
+    - reconnaissance_results
+    - infrastructure_analysis
+    - discovered_content
+    - vulnerabilities
+    - javascript_analysis
+    - risk_assessment
+    - recommendations
+    - appendix
+
+# Report configuration
+report:
+  template: "full_assessment_report"
+  formats:
+    - json
+    - markdown
+    - html
+  include_executive_summary: true
+  include_technical_details: true
+  include_evidence: true
+  severity_threshold: "info"
+
+# Risk scoring
+risk_scoring:
+  enabled: true
+  factors:
+    - vulnerability_severity
+    - exploitability
+    - asset_value
+    - exposure
+
+# Notifications (optional)
+notifications:
+  on_critical_finding: true
+  on_completion: true

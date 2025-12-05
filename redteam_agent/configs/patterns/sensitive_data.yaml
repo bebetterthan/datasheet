@@ -1,0 +1,278 @@
+# Sensitive Data Patterns
+# =======================
+# Patterns for detecting exposed sensitive information
+
+# =============================================================================
+# CREDENTIALS & API KEYS
+# =============================================================================
+
+credentials:
+  # AWS Keys
+  aws_access_key:
+    pattern: 'AKIA[0-9A-Z]{16}'
+    severity: critical
+    description: "AWS Access Key ID"
+    
+  aws_secret_key:
+    pattern: '["\'][0-9a-zA-Z/+]{40}["\']'
+    severity: critical
+    description: "Potential AWS Secret Key"
+    context_required:
+      - "aws"
+      - "amazon"
+      - "s3"
+      
+  # Google API
+  google_api_key:
+    pattern: 'AIza[0-9A-Za-z\-_]{35}'
+    severity: high
+    description: "Google API Key"
+    
+  google_oauth:
+    pattern: '[0-9]+-[0-9A-Za-z_]{32}\.apps\.googleusercontent\.com'
+    severity: high
+    description: "Google OAuth Client ID"
+    
+  # GitHub
+  github_token:
+    pattern: 'gh[pousr]_[A-Za-z0-9_]{36}'
+    severity: critical
+    description: "GitHub Token"
+    
+  github_oauth:
+    pattern: 'gho_[A-Za-z0-9_]{36}'
+    severity: critical
+    description: "GitHub OAuth Token"
+    
+  # Stripe
+  stripe_secret:
+    pattern: 'sk_live_[0-9a-zA-Z]{24}'
+    severity: critical
+    description: "Stripe Live Secret Key"
+    
+  stripe_public:
+    pattern: 'pk_live_[0-9a-zA-Z]{24}'
+    severity: medium
+    description: "Stripe Live Public Key"
+    
+  stripe_test_secret:
+    pattern: 'sk_test_[0-9a-zA-Z]{24}'
+    severity: high
+    description: "Stripe Test Secret Key"
+    
+  # PayPal
+  paypal_client:
+    pattern: 'A[a-zA-Z0-9_-]{20,}\.sandbox\.paypal\.com'
+    severity: medium
+    description: "PayPal Sandbox Credential"
+    
+  # Slack
+  slack_token:
+    pattern: 'xox[baprs]-[0-9]{12}-[0-9A-Za-z]{24}'
+    severity: critical
+    description: "Slack Token"
+    
+  slack_webhook:
+    pattern: 'https://hooks\.slack\.com/services/T[0-9A-Z]+/B[0-9A-Z]+/[0-9a-zA-Z]+'
+    severity: high
+    description: "Slack Webhook URL"
+    
+  # Twilio
+  twilio_sid:
+    pattern: 'AC[0-9a-f]{32}'
+    severity: high
+    description: "Twilio Account SID"
+    
+  twilio_auth:
+    pattern: '[0-9a-f]{32}'
+    severity: high
+    description: "Potential Twilio Auth Token"
+    context_required:
+      - "twilio"
+      - "TWILIO"
+      
+  # Sendgrid
+  sendgrid_key:
+    pattern: 'SG\.[0-9A-Za-z\-_]{22}\.[0-9A-Za-z\-_]{43}'
+    severity: critical
+    description: "SendGrid API Key"
+    
+  # Mailchimp
+  mailchimp_key:
+    pattern: '[0-9a-f]{32}-us[0-9]{1,2}'
+    severity: high
+    description: "Mailchimp API Key"
+    
+  # Firebase
+  firebase_key:
+    pattern: 'AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}'
+    severity: critical
+    description: "Firebase Cloud Messaging Key"
+    
+  # Generic API Keys
+  generic_api_key:
+    pattern: '["\']?(?:api[_-]?key|apikey|api[_-]?secret)["\']?\s*[:=]\s*["\'][a-zA-Z0-9_\-]{20,}["\']'
+    severity: high
+    description: "Generic API Key"
+    case_insensitive: true
+    
+  # Generic Secrets
+  generic_secret:
+    pattern: '["\']?(?:secret|password|passwd|pwd|token|auth)["\']?\s*[:=]\s*["\'][^"\']{8,}["\']'
+    severity: high
+    description: "Generic Secret/Password"
+    case_insensitive: true
+
+# =============================================================================
+# PRIVATE KEYS
+# =============================================================================
+
+private_keys:
+  rsa_private:
+    pattern: '-----BEGIN RSA PRIVATE KEY-----'
+    severity: critical
+    description: "RSA Private Key"
+    
+  dsa_private:
+    pattern: '-----BEGIN DSA PRIVATE KEY-----'
+    severity: critical
+    description: "DSA Private Key"
+    
+  ec_private:
+    pattern: '-----BEGIN EC PRIVATE KEY-----'
+    severity: critical
+    description: "EC Private Key"
+    
+  openssh_private:
+    pattern: '-----BEGIN OPENSSH PRIVATE KEY-----'
+    severity: critical
+    description: "OpenSSH Private Key"
+    
+  pgp_private:
+    pattern: '-----BEGIN PGP PRIVATE KEY BLOCK-----'
+    severity: critical
+    description: "PGP Private Key"
+    
+  pkcs8_private:
+    pattern: '-----BEGIN PRIVATE KEY-----'
+    severity: critical
+    description: "PKCS8 Private Key"
+
+# =============================================================================
+# PERSONAL DATA (PII)
+# =============================================================================
+
+pii:
+  # Social Security Numbers (US)
+  ssn:
+    pattern: '\b(?!000|666|9\d{2})\d{3}[-\s]?(?!00)\d{2}[-\s]?(?!0000)\d{4}\b'
+    severity: critical
+    description: "Potential US Social Security Number"
+    
+  # Credit Card Numbers
+  credit_card_visa:
+    pattern: '\b4[0-9]{12}(?:[0-9]{3})?\b'
+    severity: critical
+    description: "Potential Visa Card Number"
+    
+  credit_card_mastercard:
+    pattern: '\b(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}\b'
+    severity: critical
+    description: "Potential Mastercard Number"
+    
+  credit_card_amex:
+    pattern: '\b3[47][0-9]{13}\b'
+    severity: critical
+    description: "Potential American Express Card Number"
+    
+  credit_card_discover:
+    pattern: '\b6(?:011|5[0-9]{2})[0-9]{12}\b'
+    severity: critical
+    description: "Potential Discover Card Number"
+    
+  # Email addresses
+  email:
+    pattern: '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    severity: info
+    description: "Email Address"
+    
+  # Phone numbers
+  phone_us:
+    pattern: '\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b'
+    severity: low
+    description: "US Phone Number"
+    
+  phone_intl:
+    pattern: '\+[1-9][0-9]{6,14}'
+    severity: low
+    description: "International Phone Number"
+
+# =============================================================================
+# INTERNAL PATHS & URLS
+# =============================================================================
+
+internal_exposure:
+  # Internal URLs
+  internal_url:
+    pattern: 'https?://(?:localhost|127\.0\.0\.1|10\.\d+\.\d+\.\d+|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)'
+    severity: medium
+    description: "Internal/Private URL"
+    
+  # Internal hostnames
+  internal_host:
+    pattern: '(?:dev|staging|test|internal|local|admin|backend)[.-](?:api|server|db|app)'
+    severity: medium
+    description: "Internal Hostname"
+    case_insensitive: true
+    
+  # File paths
+  windows_path:
+    pattern: '[A-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*'
+    severity: low
+    description: "Windows File Path"
+    
+  unix_path:
+    pattern: '/(?:home|var|etc|usr|opt|tmp|root)/[a-zA-Z0-9_\-/.]+'
+    severity: low
+    description: "Unix File Path"
+    
+  # Database connection strings
+  db_connection:
+    pattern: '(?:mysql|postgres|mongodb|redis|mssql)://[^\s<>"]+:[^\s<>"]+@[^\s<>"]+'
+    severity: critical
+    description: "Database Connection String"
+
+# =============================================================================
+# DEBUG & DEVELOPMENT DATA
+# =============================================================================
+
+debug_data:
+  # Stack traces
+  stack_trace:
+    pattern: 'at\s+[A-Za-z0-9$_<>.]+\([A-Za-z0-9$_]+\.(?:java|cs|py|js|ts):\d+\)'
+    severity: medium
+    description: "Stack Trace Exposure"
+    
+  # Error messages
+  sql_error:
+    pattern: '(?:SQL|mysql|postgres|oracle|sqlite).*(?:error|exception|syntax)'
+    severity: high
+    description: "SQL Error Message"
+    case_insensitive: true
+    
+  php_error:
+    pattern: '(?:Fatal error|Warning|Parse error):.*(?:\.php)'
+    severity: high
+    description: "PHP Error Message"
+    
+  # Source code comments
+  todo_comment:
+    pattern: '(?:TODO|FIXME|HACK|XXX|BUG):\s*[^\n]+'
+    severity: info
+    description: "Development Comment"
+    
+  # Debug endpoints
+  debug_endpoint:
+    pattern: '/(?:debug|phpinfo|test|dev|admin)/?\??'
+    severity: medium
+    description: "Debug Endpoint"

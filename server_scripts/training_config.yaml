@@ -1,0 +1,53 @@
+# Model settings
+model:
+  name: "Qwen/Qwen2.5-Coder-7B-Instruct"
+  max_seq_length: 2048
+  load_in_4bit: true
+  dtype: "float16"
+
+# LoRA settings
+lora:
+  r: 16
+  lora_alpha: 32
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# Training settings
+training:
+  num_epochs: 3
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 2.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+# Optimization
+optimization:
+  fp16: true
+  bf16: false
+  gradient_checkpointing: true
+  optim: "adamw_8bit"
+
+# Saving
+saving:
+  output_dir: "./outputs"
+  save_steps: 100
+  save_total_limit: 3
+  logging_steps: 10
+
+# Wandb (optional)
+wandb:
+  enabled: false
+  project: "redteam-ai-agent"
+  run_name: "qwen-7b-lora"

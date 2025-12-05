@@ -1,0 +1,295 @@
+# Red Team Agent Configuration
+# ============================
+# Main configuration file for the Red Team AI Agent
+
+# =============================================================================
+# AGENT SETTINGS
+# =============================================================================
+
+agent:
+  # Agent identification
+  name: "RedTeam Agent"
+  version: "1.0.0"
+
+  # Core settings
+  max_iterations: 20 # Maximum iterations per task (prevent infinite loops)
+  task_timeout: 600 # Max time per task in seconds (10 minutes)
+  step_timeout: 120 # Max time per step in seconds (2 minutes)
+  verbose: true # Print detailed steps
+
+  # Execution mode
+  mode: "autonomous" # autonomous, semi-autonomous, manual
+  require_approval: false # Require user approval for each action
+
+  # Retry settings
+  max_retries: 3
+  retry_delay: 5 # Seconds between retries
+
+# =============================================================================
+# LLM SETTINGS
+# =============================================================================
+
+llm:
+  # Provider type
+  provider: "local" # local, api, openai
+
+  # Local model settings (when provider: local)
+  model_path: "~/redteam-ai-agent/outputs/run_20251130_084846/final_model"
+  base_model: "Qwen/Qwen2.5-Coder-7B-Instruct"
+
+  # API settings (when provider: api)
+  api_url: "http://localhost:8000/v1"
+  api_key: null # Set via env: REDTEAM_API_KEY
+
+  # Generation parameters
+  max_tokens: 4096
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  repetition_penalty: 1.1
+
+  # Request settings
+  timeout: 120 # API request timeout
+  retry_on_failure: true
+  max_retries: 3
+
+# =============================================================================
+# MEMORY SETTINGS
+# =============================================================================
+
+memory:
+  # Context management
+  max_context_tokens: 8000 # Maximum tokens in context window
+  summarize_threshold: 6000 # When to start summarizing
+
+  # Memory persistence
+  persist_memory: false # Save memory between sessions
+  memory_file: "~/.redteam-agent/memory.json"
+
+  # Short-term memory
+  short_term:
+    max_steps: 100 # Max steps to remember
+    max_findings: 500 # Max findings to keep
+
+  # Long-term memory (persistent)
+  long_term:
+    enabled: false
+    storage: "file" # file, sqlite, redis
+    path: "~/.redteam-agent/long_term_memory.db"
+
+# =============================================================================
+# SECURITY SETTINGS (GATE ZERO)
+# =============================================================================
+
+security:
+  # Enable/disable security checks
+  enabled: true
+
+  # Authorization mode
+  require_authorization: true
+  engagement_file: "./configs/engagement.yaml"
+
+  # Scope validation
+  whitelist_only: true # Only allow whitelisted targets
+  whitelist: [] # Configure in engagement.yaml or here
+
+  # Blacklist (always blocked)
+  blacklist:
+    - "127.0.0.1"
+    - "localhost"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+    - "169.254.0.0/16" # Link-local
+    - "::1" # IPv6 localhost
+
+  # Action restrictions
+  require_scope_confirmation: true
+  block_dangerous_actions: true
+
+  # Audit logging
+  log_all_actions: true
+  audit_log_path: "./logs/audit/"
+
+  # Rate limiting
+  rate_limiting:
+    enabled: true
+    requests_per_second: 50
+    requests_per_minute: 1000
+
+# =============================================================================
+# OUTPUT SETTINGS
+# =============================================================================
+
+output:
+  # Output directory
+  directory: "./outputs"
+
+  # Report settings
+  auto_report: true # Auto-generate report after task
+  report_format: "json" # json, markdown, html
+
+  # Additional formats to generate
+  additional_formats:
+    - "markdown"
+
+  # Save options
+  save_raw_outputs: true # Save raw tool outputs
+  save_intermediate: false # Save intermediate results
+
+  # Report content
+  include_evidence: true
+  include_screenshots: false
+  include_raw_responses: false
+  max_evidence_size: 10000 # Max chars per evidence item
+
+  # Naming
+  filename_template: "{date}_{target}_{scan_type}"
+
+# =============================================================================
+# LOGGING SETTINGS
+# =============================================================================
+
+logging:
+  # Log level
+  level: "INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+  # Console logging
+  console:
+    enabled: true
+    level: "INFO"
+    colorized: true
+
+  # File logging
+  file:
+    enabled: true
+    path: "./logs/agent.log"
+    level: "DEBUG"
+    max_size: "10MB"
+    backup_count: 5
+    format: "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
+
+  # Structured logging (JSON)
+  structured:
+    enabled: false
+    path: "./logs/agent.json.log"
+
+# =============================================================================
+# TOOL SETTINGS
+# =============================================================================
+
+tools:
+  # Tool directories
+  tools_dir: "./agent/tools"
+  custom_tools_dir: "./custom_tools"
+
+  # Tool config file
+  config_file: "./configs/tools_config.yaml"
+
+  # Default tool settings
+  defaults:
+    timeout: 300 # Default tool timeout
+    retry_on_failure: true
+    max_retries: 2
+
+  # Tool categories enabled
+  enabled_categories:
+    - "recon"
+    - "scanner"
+    - "analyzer"
+    - "reporter"
+
+  # Disabled tools (override enabled categories)
+  disabled_tools: []
+
+# =============================================================================
+# WORKFLOW SETTINGS
+# =============================================================================
+
+workflow:
+  # Workflow directory
+  workflows_dir: "./configs/workflows"
+
+  # Default workflow
+  default_workflow: null # Use LLM planning if null
+
+  # Workflow settings
+  max_parallel_steps: 5
+  step_timeout: 300
+
+  # Pre-built workflows
+  presets:
+    quick_scan: "quick_recon.yaml"
+    full_assessment: "full_assessment.yaml"
+    api_security: "api_security.yaml"
+    payment_scan: "payment_assessment.yaml"
+
+# =============================================================================
+# PATTERNS SETTINGS
+# =============================================================================
+
+patterns:
+  # Patterns directory
+  patterns_dir: "./configs/patterns"
+
+  # Pattern files to load
+  files:
+    - "skimmer_patterns.yaml"
+    - "sensitive_data.yaml"
+    - "vulnerability_patterns.yaml"
+
+  # Pattern matching settings
+  matching:
+    case_sensitive: false
+    max_matches_per_pattern: 100
+    context_lines: 3 # Lines of context around match
+
+# =============================================================================
+# NETWORK SETTINGS
+# =============================================================================
+
+network:
+  # HTTP client settings
+  http:
+    timeout: 30
+    follow_redirects: true
+    max_redirects: 10
+    verify_ssl: true
+
+  # User agent
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+  # Proxy settings
+  proxy:
+    enabled: false
+    http: null
+    https: null
+    no_proxy: ["localhost", "127.0.0.1"]
+
+  # DNS settings
+  dns:
+    timeout: 10
+    servers: [] # Use system default if empty
+
+# =============================================================================
+# ADVANCED SETTINGS
+# =============================================================================
+
+advanced:
+  # Debug mode
+  debug: false
+
+  # Performance
+  max_concurrent_tools: 5
+  thread_pool_size: 10
+
+  # Caching
+  cache:
+    enabled: true
+    ttl: 3600 # Cache TTL in seconds
+    max_size: 1000 # Max cached items
+
+  # Experimental features
+  experimental:
+    enabled: false
+    features: []

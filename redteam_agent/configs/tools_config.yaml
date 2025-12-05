@@ -1,0 +1,364 @@
+# Red Team Agent - Tools Configuration
+# =====================================
+# Configuration for all security assessment tools
+
+# Global Settings
+global:
+  timeout: 300 # Default timeout (seconds)
+  max_retries: 3 # Retry failed tools
+  rate_limit: 100 # Requests per minute
+  user_agent: "RedTeamAgent/1.0 (Security Assessment)"
+  respect_robots_txt: false # Ignore robots.txt for security testing
+  verify_ssl: true # Verify SSL certificates
+  proxy: null # Optional proxy (http://proxy:8080)
+
+# =============================================================================
+# RECON TOOLS
+# =============================================================================
+
+recon:
+  # Nmap Port Scanner
+  nmap:
+    enabled: true
+    binary_path: "nmap"
+    default_options:
+      - "-sV" # Version detection
+      - "-sC" # Default scripts
+      - "--open" # Only show open ports
+    timing_template: 3 # T3 = Normal speed
+    top_ports: 1000 # Scan top N ports
+    timeout: 600
+    max_retries: 2
+
+  # WHOIS Lookup
+  whois:
+    enabled: true
+    timeout: 30
+    cache_results: true
+    cache_ttl: 3600 # 1 hour
+
+  # DNS Enumeration
+  dns:
+    enabled: true
+    resolvers:
+      - "8.8.8.8"
+      - "1.1.1.1"
+      - "9.9.9.9"
+    record_types:
+      - "A"
+      - "AAAA"
+      - "CNAME"
+      - "MX"
+      - "NS"
+      - "TXT"
+      - "SOA"
+    timeout: 30
+
+  # HTTP Client/Probe
+  http_client:
+    enabled: true
+    timeout: 30
+    follow_redirects: true
+    max_redirects: 10
+    headers:
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      Accept-Language: "en-US,en;q=0.5"
+      Accept-Encoding: "gzip, deflate"
+    verify_ssl: true
+    capture_timing: true
+
+  # Technology Detection
+  tech_detect:
+    enabled: true
+    timeout: 60
+    deep_scan: true
+    detect_versions: true
+    check_categories:
+      - "cms"
+      - "frameworks"
+      - "servers"
+      - "security"
+      - "analytics"
+      - "payment"
+
+# =============================================================================
+# SCANNER TOOLS
+# =============================================================================
+
+scanner:
+  # Nuclei Vulnerability Scanner
+  nuclei:
+    enabled: true
+    binary_path: "nuclei"
+    templates_path: "./nuclei-templates"
+    custom_templates: "./configs/nuclei-custom"
+    severity_filter:
+      - "critical"
+      - "high"
+      - "medium"
+    tags:
+      - "cve"
+      - "xss"
+      - "sqli"
+      - "rce"
+      - "lfi"
+      - "ssrf"
+      - "magecart"
+    exclude_tags:
+      - "dos"
+      - "fuzz"
+    rate_limit: 150
+    bulk_size: 25
+    concurrency: 25
+    timeout: 600
+    retries: 1
+
+  # Gobuster Directory Scanner
+  gobuster:
+    enabled: true
+    binary_path: "gobuster"
+    wordlists:
+      directories: "/usr/share/wordlists/dirb/common.txt"
+      files: "/usr/share/wordlists/dirb/extensions_common.txt"
+      vhosts: "/usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt"
+    extensions:
+      - "php"
+      - "asp"
+      - "aspx"
+      - "jsp"
+      - "html"
+      - "js"
+      - "json"
+      - "xml"
+      - "txt"
+      - "bak"
+      - "old"
+    threads: 50
+    timeout: 300
+    status_codes:
+      - 200
+      - 201
+      - 204
+      - 301
+      - 302
+      - 307
+      - 401
+      - 403
+      - 405
+      - 500
+
+  # FFUF Fuzzer
+  ffuf:
+    enabled: true
+    binary_path: "ffuf"
+    wordlists:
+      default: "/usr/share/wordlists/dirb/common.txt"
+      params: "/usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt"
+    threads: 40
+    rate_limit: 0 # 0 = unlimited
+    timeout: 300
+    match_codes:
+      - 200
+      - 204
+      - 301
+      - 302
+      - 307
+      - 401
+      - 403
+      - 405
+      - 500
+    filter_size: null # Filter by response size
+    filter_words: null # Filter by word count
+
+  # Security Header Scanner
+  header_scanner:
+    enabled: true
+    timeout: 30
+    required_headers:
+      - "Content-Security-Policy"
+      - "Strict-Transport-Security"
+      - "X-Frame-Options"
+      - "X-Content-Type-Options"
+      - "X-XSS-Protection"
+      - "Referrer-Policy"
+      - "Permissions-Policy"
+    deprecated_headers:
+      - "X-XSS-Protection" # Deprecated, rely on CSP
+    info_disclosure_headers:
+      - "Server"
+      - "X-Powered-By"
+      - "X-AspNet-Version"
+      - "X-AspNetMvc-Version"
+
+  # SSL/TLS Scanner
+  ssl_scanner:
+    enabled: true
+    timeout: 60
+    check_certificate: true
+    check_chain: true
+    check_protocols: true
+    check_ciphers: true
+    weak_protocols:
+      - "SSLv2"
+      - "SSLv3"
+      - "TLSv1.0"
+      - "TLSv1.1"
+    weak_ciphers:
+      - "RC4"
+      - "DES"
+      - "3DES"
+      - "MD5"
+      - "NULL"
+      - "EXPORT"
+      - "anon"
+
+# =============================================================================
+# ANALYZER TOOLS
+# =============================================================================
+
+analyzer:
+  # Response Analyzer
+  response_analyzer:
+    enabled: true
+    analyze_headers: true
+    analyze_body: true
+    analyze_cookies: true
+    detect_technology: true
+    extract_links: true
+    extract_forms: true
+    max_body_size: 10485760 # 10MB
+
+  # Pattern Matcher
+  pattern_matcher:
+    enabled: true
+    pattern_files:
+      - "./configs/patterns/skimmer_patterns.yaml"
+      - "./configs/patterns/sensitive_data.yaml"
+      - "./configs/patterns/errors.yaml"
+    case_sensitive: false
+    max_matches: 100
+
+  # JavaScript Analyzer
+  js_analyzer:
+    enabled: true
+    timeout: 120
+    max_file_size: 10485760 # 10MB
+    deobfuscate: true
+    extract_strings: true
+    extract_urls: true
+    detect_eval: true
+    detect_obfuscation: true
+    entropy_threshold: 5.5 # High entropy = possible obfuscation
+    pattern_file: "./configs/patterns/skimmer_patterns.yaml"
+    known_good_hashes: "./configs/known_good_scripts.txt"
+
+  # Magecart/Skimmer Detection
+  skimmer_detect:
+    enabled: true
+    timeout: 180
+    deep_scan: true
+    check_all_scripts: true
+    check_inline_scripts: true
+    check_external_scripts: true
+    pattern_file: "./configs/patterns/skimmer_patterns.yaml"
+    domain_blacklist: "./configs/patterns/malicious_domains.txt"
+    magecart_signatures: true
+    behavioral_analysis: true
+    exfiltration_detection: true
+
+  # CSP Analyzer
+  csp_analyzer:
+    enabled: true
+    timeout: 60
+    check_bypasses: true
+    check_unsafe_directives: true
+    generate_recommendations: true
+    bypass_domains_file: "./configs/patterns/csp_bypass_domains.txt"
+
+# =============================================================================
+# REPORTER TOOLS
+# =============================================================================
+
+reporter:
+  # Report Generator
+  report_generator:
+    enabled: true
+    formats:
+      - "json"
+      - "markdown"
+      - "html"
+    default_format: "markdown"
+    include_evidence: true
+    include_remediation: true
+    include_references: true
+    output_directory: "./reports"
+    template_directory: "./configs/templates"
+
+  # Finding Classifier
+  finding_classifier:
+    severity_levels:
+      critical: 10.0
+      high: 7.0
+      medium: 4.0
+      low: 2.0
+      info: 0.0
+    cvss_enabled: true
+    auto_classify: true
+
+# =============================================================================
+# TOOL DEPENDENCIES
+# =============================================================================
+
+dependencies:
+  # External binaries required
+  binaries:
+    nmap:
+      required: false
+      install: "apt-get install nmap"
+    nuclei:
+      required: false
+      install: "go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"
+    gobuster:
+      required: false
+      install: "go install github.com/OJ/gobuster/v3@latest"
+    ffuf:
+      required: false
+      install: "go install github.com/ffuf/ffuf/v2@latest"
+
+  # Python packages
+  python:
+    - "dnspython"
+    - "requests"
+    - "beautifulsoup4"
+    - "lxml"
+    - "PyYAML"
+    - "cryptography"
+
+# =============================================================================
+# RATE LIMITING & SAFETY
+# =============================================================================
+
+safety:
+  # Rate limiting
+  rate_limits:
+    global: 100 # Max requests per minute globally
+    per_host: 50 # Max requests per minute per host
+    burst: 10 # Allow burst of N requests
+
+  # Timeouts
+  timeouts:
+    connect: 10 # Connection timeout
+    read: 30 # Read timeout
+    total: 300 # Total operation timeout
+
+  # Circuit breaker
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5 # Open circuit after N failures
+    reset_timeout: 60 # Try again after N seconds
+
+  # Resource limits
+  resources:
+    max_concurrent_tools: 5
+    max_memory_mb: 1024
+    max_output_size_mb: 50

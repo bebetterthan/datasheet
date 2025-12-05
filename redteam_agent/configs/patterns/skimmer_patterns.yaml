@@ -1,0 +1,465 @@
+# Magecart/Skimmer Detection Patterns
+# =====================================
+# Comprehensive patterns for detecting payment card skimmers
+# Based on real-world Magecart campaigns and research
+
+# =============================================================================
+# MAGECART GROUP SIGNATURES
+# =============================================================================
+
+magecart_groups:
+  # Group 4 - One of the earliest groups
+  group_4:
+    name: "Magecart Group 4"
+    aliases: ["Cobalt Group"]
+    patterns:
+      - 'jquery-migrate'
+      - 'google-analyitics'           # Intentional typo
+      - 'g-analytics'
+      - 'google-anaiytic'
+      - 'bootstrapcdn\.net(?!/)'      # Fake CDN
+    domains:
+      - "jquery-cdn.top"
+      - "bootstrapcdn.net"
+      - "jquerycdn.su"
+    severity: critical
+    
+  # Group 5 - Targets third-party suppliers
+  group_5:
+    name: "Magecart Group 5"
+    aliases: ["JS Sniffer"]
+    patterns:
+      - 'reactjslib'
+      - 'jquerystatic'
+      - 'webfontloader'
+      - 'js-sniffer'
+    domains:
+      - "reactjslib.com"
+      - "jquerystatic.com"
+    severity: critical
+    
+  # Group 6 - Magento focused
+  group_6:
+    name: "Magecart Group 6"
+    aliases: ["FIN6", "ITG08"]
+    patterns:
+      - 'magento-analytics'
+      - 'magento-cdn'
+      - 'magentocdn'
+      - 'magento\.name'
+    domains:
+      - "magento-analytics.com"
+      - "magento-cdn.net"
+      - "magentocore.net"
+    severity: critical
+    
+  # Group 7 - Uses Magento admin panels
+  group_7:
+    name: "Magecart Group 7"
+    patterns:
+      - 'g-statistic'
+      - 'googletagsmanager'           # Typo version
+      - 'google-tagmanager\.com'      # Fake domain
+      - 'analytic-google'
+    domains:
+      - "g-statistic.com"
+      - "googletagsmanager.com"
+    severity: critical
+    
+  # Group 8 - Known for supply chain attacks  
+  group_8:
+    name: "Magecart Group 8"
+    patterns:
+      - 'segmentify'
+      - 'chatango'
+      - 'socialplus'
+    severity: high
+    
+  # Group 9 - Highly sophisticated
+  group_9:
+    name: "Magecart Group 9"
+    aliases: ["FIN7"]
+    patterns:
+      - 'font-assets'
+      - 'google-payments'
+      - 'payment-service'
+    domains:
+      - "font-assets.com"
+      - "google-payments.com"
+    severity: critical
+    
+  # Inter (Inter Skimmer Kit)
+  inter:
+    name: "Inter Skimmer Kit"
+    patterns:
+      - 'inter_clean'
+      - 'inter_call'
+      - 'sniffer_start'
+      - 'formGrabber'
+    domains:
+      - "magento.name"
+      - "statistic.su"
+    severity: critical
+    
+  # Keeper
+  keeper:
+    name: "Keeper Group"
+    patterns:
+      - 'fileskeeper'
+      - 'fresh-keeper'
+      - 'cloud-storage'
+    domains:
+      - "fileskeeper.org"
+      - "freshkeeper.com"
+    severity: critical
+    
+  # Grelos
+  grelos:
+    name: "Grelos Skimmer"
+    patterns:
+      - 'grfrm\d+'
+      - 'grelos'
+      - '_gr_payment'
+    severity: high
+
+# =============================================================================
+# FORM GRABBING PATTERNS
+# =============================================================================
+
+form_grabbing:
+  # Form element access
+  form_access:
+    patterns:
+      - 'document\.forms'
+      - 'getElementsByTagName\s*\(\s*["\']form["\']'
+      - 'querySelectorAll\s*\(\s*["\']form'
+      - 'querySelector\s*\(\s*["\']#?payment'
+      - '\.elements\['
+    severity: medium
+    context: "Accessing form elements"
+    
+  # Input monitoring
+  input_monitoring:
+    patterns:
+      - 'addEventListener\s*\(\s*["\'](?:keyup|keydown|keypress|input|change)["\']'
+      - 'onkeyup\s*='
+      - 'onkeydown\s*='
+      - 'oninput\s*='
+      - '\.on\s*\(\s*["\'](?:keyup|keydown|input)["\']'
+    severity: medium
+    context: "Monitoring keyboard input"
+    
+  # Form submit interception
+  submit_interception:
+    patterns:
+      - 'addEventListener\s*\(\s*["\']submit["\']'
+      - 'onsubmit\s*='
+      - '\.submit\s*\('
+      - 'preventDefault.*form'
+      - 'form.*preventDefault'
+    severity: high
+    context: "Intercepting form submission"
+
+# =============================================================================
+# PAYMENT FIELD TARGETING
+# =============================================================================
+
+payment_targeting:
+  # Credit card number fields
+  card_number:
+    patterns:
+      - 'getElementById\s*\(\s*["\'](?:cc|card|credit|payment)[_-]?(?:number|num|no)["\']'
+      - 'querySelector\s*\(\s*["\'](?:input|#)\[(?:name|id).*(?:card|cc|credit).*(?:number|num)["\']'
+      - 'name\s*=\s*["\'](?:cc|card|credit)[_-]?(?:number|num|no)["\']'
+      - '(?:pan|primaryAccountNumber)'
+    severity: critical
+    context: "Targeting credit card number field"
+    
+  # CVV/CVC fields
+  cvv_field:
+    patterns:
+      - '(?:cvv|cvc|csc|cvn|cv2|cid)["\']?\s*[:\]=]'
+      - 'getElementById\s*\(\s*["\'](?:cvv|cvc|csc)["\']'
+      - 'security[_-]?code'
+      - 'card[_-]?verification'
+    severity: critical
+    context: "Targeting CVV field"
+    
+  # Expiration date fields
+  expiry_field:
+    patterns:
+      - '(?:exp(?:iry|iration)?[_-]?(?:date|month|year|mm|yy))["\']?\s*[:\]=]'
+      - 'getElementById\s*\(\s*["\'](?:exp|expiry|expiration)'
+      - 'valid[_-]?(?:thru|through)'
+    severity: high
+    context: "Targeting expiration date field"
+    
+  # Cardholder name
+  cardholder:
+    patterns:
+      - '(?:cardholder|card[_-]?holder|card[_-]?name)["\']?\s*[:\]=]'
+      - 'getElementById\s*\(\s*["\'](?:cardholder|holder|card[_-]?name)["\']'
+      - 'name[_-]?on[_-]?card'
+    severity: high
+    context: "Targeting cardholder name field"
+    
+  # Billing address
+  billing:
+    patterns:
+      - 'billing[_-]?(?:address|street|city|zip|postal|country)'
+      - 'getElementById\s*\(\s*["\']billing'
+    severity: medium
+    context: "Targeting billing information"
+
+# =============================================================================
+# DATA EXFILTRATION PATTERNS
+# =============================================================================
+
+exfiltration:
+  # Image beacon exfiltration
+  image_beacon:
+    patterns:
+      - 'new\s+Image\s*\(\s*\)\.src\s*='
+      - 'Image\s*\(\s*\)\.src\s*=.*\?'
+      - '\.src\s*=\s*["\']https?://[^"\']+\?[^"\']*(?:data|cc|card|payment)'
+      - 'createElement\s*\(\s*["\']img["\']\s*\).*\.src'
+    severity: critical
+    context: "Data exfiltration via image beacon"
+    
+  # Navigator sendBeacon
+  send_beacon:
+    patterns:
+      - 'navigator\.sendBeacon\s*\('
+      - 'sendBeacon\s*\(\s*["\']https?://'
+    severity: critical
+    context: "Data exfiltration via sendBeacon"
+    
+  # Fetch/XHR exfiltration
+  fetch_xhr:
+    patterns:
+      - 'fetch\s*\(\s*["\']https?://(?!.*(?:google|facebook|twitter|analytics|cdn|jquery|bootstrap))'
+      - 'XMLHttpRequest.*\.open\s*\(\s*["\']POST["\'].*https?://'
+      - '\.ajax\s*\(\s*\{[^}]*url\s*:\s*["\']https?://(?!.*(?:google|facebook|twitter))'
+    severity: high
+    context: "Data exfiltration via Fetch/XHR"
+    
+  # WebSocket exfiltration
+  websocket:
+    patterns:
+      - 'new\s+WebSocket\s*\(\s*["\']wss?://'
+      - 'WebSocket.*\.send\s*\('
+    severity: high
+    context: "Potential data exfiltration via WebSocket"
+
+# =============================================================================
+# OBFUSCATION PATTERNS
+# =============================================================================
+
+obfuscation:
+  # eval and Function constructor
+  eval_usage:
+    patterns:
+      - 'eval\s*\('
+      - 'Function\s*\(\s*["\']return'
+      - 'new\s+Function\s*\('
+      - '\[["\']\s*constructor\s*["\']\]\s*\('
+    severity: high
+    context: "Dynamic code execution (eval/Function)"
+    
+  # String encoding/decoding
+  string_encoding:
+    patterns:
+      - 'atob\s*\('
+      - 'btoa\s*\('
+      - 'fromCharCode'
+      - 'charCodeAt'
+      - 'String\.fromCharCode\.apply'
+      - 'unescape\s*\('
+      - 'decodeURIComponent\s*\('
+    severity: medium
+    context: "String encoding/decoding functions"
+    
+  # Hex/Unicode encoding
+  encoding_patterns:
+    patterns:
+      - '\\x[0-9a-fA-F]{2}'
+      - '\\u[0-9a-fA-F]{4}'
+      - '\\u\{[0-9a-fA-F]+\}'
+      - '0x[0-9a-fA-F]+'
+    severity: low
+    context: "Encoded characters detected"
+    
+  # Array-based obfuscation
+  array_obfuscation:
+    patterns:
+      - '\[["\']\s*split\s*["\']\]\s*\(\s*["\']["\']?\s*\)'
+      - '\.split\s*\(\s*["\']["\']?\s*\)\s*\.reverse\s*\('
+      - '\.join\s*\(\s*["\']["\']?\s*\)'
+      - '\[(?:["\'][a-z]+["\'],?\s*)+\]\[["\']'
+    severity: medium
+    context: "Array-based string obfuscation"
+    
+  # Heavy obfuscation indicators
+  heavy_obfuscation:
+    patterns:
+      - '(?:_0x[a-f0-9]+\s*=?\s*){3,}'
+      - '(?:var\s+[_$a-zA-Z][_$a-zA-Z0-9]*\s*=\s*\[\s*){3,}'
+      - 'String\[.*\]\[.*\]\[.*\]'
+    severity: high
+    context: "Heavy JavaScript obfuscation detected"
+
+# =============================================================================
+# SUSPICIOUS DOMAIN PATTERNS
+# =============================================================================
+
+suspicious_domains:
+  # Typosquatting known services
+  typosquatting:
+    patterns:
+      - 'google[-_]?analy[it]ics?'
+      - 'googletag[-_]?man[ao]ger'
+      - 'facebo[o0]k[-_]?pixel'
+      - 'jqu[e3]ry[-_]?cdn'
+      - 'boots[tr]ap[-_]?cdn'
+    severity: critical
+    context: "Typosquatting legitimate service"
+    
+  # Suspicious TLDs
+  suspicious_tlds:
+    patterns:
+      - '\.su(?:/|$)'
+      - '\.ru(?:/|$)'
+      - '\.tk(?:/|$)'
+      - '\.ml(?:/|$)'
+      - '\.ga(?:/|$)'
+      - '\.cf(?:/|$)'
+      - '\.gq(?:/|$)'
+      - '\.top(?:/|$)'
+      - '\.xyz(?:/|$)'
+      - '\.pw(?:/|$)'
+    severity: medium
+    context: "Script from suspicious TLD"
+    
+  # Generic suspicious patterns
+  suspicious_generic:
+    patterns:
+      - 'payment[-_]?(?:gate|api|service|proc)'
+      - 'secure[-_]?(?:payment|checkout|card)'
+      - 'card[-_]?(?:process|collect|grab)'
+      - '(?:track|stat|analytics)[-_]?(?:js|script)'
+    severity: high
+    context: "Suspicious domain pattern"
+
+# =============================================================================
+# BEHAVIORAL PATTERNS
+# =============================================================================
+
+behavioral:
+  # Payment page detection
+  payment_page_detection:
+    patterns:
+      - 'location\.(?:href|pathname).*(?:checkout|payment|cart|order)'
+      - 'document\.URL.*(?:checkout|payment|cart|order)'
+      - 'window\.location.*(?:checkout|payment|cart|order)'
+    severity: low
+    context: "Script checking for payment page"
+    
+  # Clipboard access
+  clipboard_access:
+    patterns:
+      - 'navigator\.clipboard'
+      - 'document\.execCommand\s*\(\s*["\']copy["\']'
+      - 'clipboardData'
+    severity: medium
+    context: "Clipboard access detected"
+    
+  # Local storage abuse
+  storage_abuse:
+    patterns:
+      - 'localStorage\.setItem.*(?:card|cc|payment|cvv)'
+      - 'sessionStorage\.setItem.*(?:card|cc|payment|cvv)'
+    severity: high
+    context: "Storing payment data in browser storage"
+    
+  # Timer-based behavior
+  timer_behavior:
+    patterns:
+      - 'setInterval\s*\(\s*(?:function|\(\s*\))'
+      - 'setTimeout\s*\(\s*(?:function|\(\s*\)).*(?:\d{4,}|[1-9]\d*\s*\*\s*\d+)'
+    severity: low
+    context: "Timer-based execution"
+
+# =============================================================================
+# INJECTION INDICATORS
+# =============================================================================
+
+injection:
+  # Script injection
+  script_injection:
+    patterns:
+      - 'document\.write\s*\(\s*["\']<script'
+      - 'innerHTML\s*=.*<script'
+      - 'createElement\s*\(\s*["\']script["\']'
+      - 'appendChild.*script'
+      - 'insertBefore.*script'
+    severity: medium
+    context: "Dynamic script injection"
+    
+  # DOM manipulation
+  dom_manipulation:
+    patterns:
+      - 'document\.body\.appendChild'
+      - 'document\.head\.appendChild'
+      - 'insertAdjacentHTML.*script'
+      - '\.outerHTML\s*='
+    severity: low
+    context: "DOM manipulation detected"
+
+# =============================================================================
+# ANTI-ANALYSIS TECHNIQUES
+# =============================================================================
+
+anti_analysis:
+  # Debugger detection
+  debugger_detection:
+    patterns:
+      - 'debugger\s*;'
+      - 'constructor\s*\(\s*["\']debugger["\']'
+      - '\["debugger"\]'
+    severity: high
+    context: "Anti-debugging technique"
+    
+  # Console detection
+  console_detection:
+    patterns:
+      - 'console\.(?:log|warn|error|clear)'
+      - 'window\.console'
+      - 'typeof\s+console'
+    severity: low
+    context: "Console usage detection"
+    
+  # DevTools detection
+  devtools_detection:
+    patterns:
+      - 'devtools'
+      - '__REACT_DEVTOOLS'
+      - 'Firebug'
+      - 'outerHeight\s*-\s*innerHeight'
+      - 'outerWidth\s*-\s*innerWidth'
+    severity: medium
+    context: "DevTools detection technique"
+
+# =============================================================================
+# KNOWN MALICIOUS HASHES
+# =============================================================================
+
+known_hashes:
+  description: "SHA256 hashes of known malicious skimmer scripts"
+  hashes:
+    - hash: "a1b2c3d4e5f6..."
+      name: "Inter Skimmer v1"
+      severity: critical
+    - hash: "f6e5d4c3b2a1..."
+      name: "Magecart Group 6 variant"
+      severity: critical
+    # Add more as discovered

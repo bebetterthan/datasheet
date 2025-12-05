@@ -1,0 +1,123 @@
+# Red Team Agent Configuration
+# ============================
+
+# LLM Settings
+llm:
+  # Path to fine-tuned LoRA adapter
+  model_path: ~/redteam-ai-agent/outputs/run_20251130_084846/final_model
+
+  # Base model (Hugging Face model ID)
+  base_model: Qwen/Qwen2.5-Coder-7B-Instruct
+
+  # Generation settings
+  max_tokens: 2048
+  temperature: 0.3
+  top_p: 0.9
+
+# Agent Settings
+agent:
+  # Maximum steps per task
+  max_steps: 50
+
+  # Timeout per step (seconds)
+  step_timeout: 300
+
+  # Total task timeout (seconds)
+  total_timeout: 3600
+
+  # Require manual approval for sensitive actions
+  require_approval: false
+
+  # Allowed tool categories
+  allowed_tools:
+    - recon
+    - scanner
+    - analyzer
+
+# Security Settings (Gate Zero)
+security:
+  # Enable security checks
+  enabled: true
+
+  # Only allow whitelisted targets
+  whitelist_only: true
+
+  # Whitelisted targets (IPs, CIDRs, domains)
+  # IMPORTANT: Configure this before testing!
+  whitelist: []
+  #  - 192.168.1.0/24
+  #  - 10.0.0.0/8
+  #  - target.example.com
+  #  - "*.example.com"
+
+  # Blacklisted targets (always blocked)
+  blacklist:
+    - 127.0.0.1
+    - localhost
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+
+  # Require confirmation for scope
+  require_scope_confirmation: true
+
+  # Log all actions
+  log_all_actions: true
+
+# Memory Settings
+memory:
+  # Maximum tokens in context window
+  max_context_tokens: 8000
+
+  # Threshold for automatic summarization
+  summarize_threshold: 6000
+
+  # Persist long-term memory across sessions
+  persist_long_term: false
+
+# Logging Settings
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: INFO
+
+  # Log file path
+  file: logs/agent.log
+
+  # Log format
+  format: "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s"
+
+# Output Settings
+output:
+  # Output directory
+  directory: outputs
+
+  # Default report format
+  report_format: json
+
+  # Save raw tool outputs
+  save_raw_outputs: true
+
+# Tool Settings
+tools:
+  nmap:
+    enabled: true
+    path: nmap
+    default_args: "-sV -sC"
+    timeout: 300
+
+  gobuster:
+    enabled: true
+    path: gobuster
+    wordlist: /usr/share/wordlists/dirb/common.txt
+    timeout: 600
+
+  nuclei:
+    enabled: true
+    path: nuclei
+    templates_path: ~/nuclei-templates
+    timeout: 600
+
+  ffuf:
+    enabled: true
+    path: ffuf
+    timeout: 600

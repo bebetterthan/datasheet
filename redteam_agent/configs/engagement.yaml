@@ -1,0 +1,168 @@
+# Engagement Configuration
+# ========================
+# Define scope and rules for security assessment
+
+engagement:
+  # Unique engagement identifier
+  id: "ENG-2024-001"
+
+  # Client information
+  client:
+    name: "Example Corporation"
+    contact: "security@example.com"
+
+  # Engagement dates
+  dates:
+    start: "2024-12-01"
+    end: "2024-12-31"
+
+  # Assessment type
+  type: "web_application_security" # web_application_security, api_security, network, etc.
+
+# Scope Definition
+scope:
+  # Allowed domains (supports wildcards)
+  domains:
+    - "example.com"
+    - "*.example.com"
+    - "api.example.com"
+    - "staging.example.com"
+
+  # Allowed IP ranges (CIDR notation)
+  ip_ranges:
+    - "203.0.113.0/24"
+    - "198.51.100.0/24"
+
+  # Specific URLs to include
+  include_urls:
+    - "https://example.com/checkout"
+    - "https://example.com/payment"
+    - "https://api.example.com/v1/*"
+
+  # Exclusions (always blocked even if in scope)
+  exclude:
+    domains:
+      - "prod.example.com"
+      - "production.example.com"
+      - "*.prod.example.com"
+
+    ip_ranges:
+      - "203.0.113.1" # Production server
+
+    urls:
+      - "https://example.com/admin"
+      - "https://example.com/internal/*"
+
+    paths:
+      - "/admin"
+      - "/internal"
+      - "/api/v1/admin/*"
+
+# Allowed Actions
+allowed_actions:
+  # Reconnaissance actions
+  recon:
+    enabled: true
+    actions:
+      - dns_lookup
+      - whois
+      - http_probe
+      - tech_detect
+      - ssl_check
+
+  # Scanning actions
+  scan:
+    enabled: true
+    actions:
+      - port_scan
+      - header_scan
+      - directory_bruteforce
+      - vulnerability_scan
+      - nuclei_scan
+
+    # Scanning limits
+    limits:
+      max_requests_per_second: 50
+      max_concurrent_scans: 5
+      port_scan_range: "top-1000" # or "1-65535" for full
+
+  # Analysis actions
+  analyze:
+    enabled: true
+    actions:
+      - js_analysis
+      - csp_analysis
+      - response_analysis
+      - pattern_matching
+      - skimmer_detection
+
+  # Exploitation (usually disabled)
+  exploit:
+    enabled: false
+    requires_approval: true
+    actions: []
+
+  # Reporting
+  report:
+    enabled: true
+    actions:
+      - generate_report
+      - export_findings
+
+# Rules of Engagement
+rules:
+  # General rules
+  general:
+    - "No denial of service attacks"
+    - "No data exfiltration"
+    - "No modification of production data"
+    - "Report critical findings immediately"
+    - "Maintain confidentiality of findings"
+
+  # Testing hours (24h format, timezone)
+  testing_hours:
+    enabled: false
+    timezone: "UTC"
+    allowed_hours:
+      start: "09:00"
+      end: "17:00"
+    allowed_days:
+      - "Monday"
+      - "Tuesday"
+      - "Wednesday"
+      - "Thursday"
+      - "Friday"
+
+  # Rate limiting
+  rate_limits:
+    requests_per_second: 50
+    requests_per_minute: 1000
+    max_concurrent: 10
+
+  # Notifications
+  notifications:
+    on_critical_finding: true
+    on_scope_violation_attempt: true
+    contact_email: "security@example.com"
+    webhook_url: null # Optional webhook for alerts
+
+# Credentials (if provided for authenticated testing)
+credentials:
+  enabled: false
+  # DO NOT store actual credentials here
+  # Reference external secure storage
+  storage_type: "env" # env, vault, file
+  references:
+    api_key: "ENGAGEMENT_API_KEY"
+    auth_token: "ENGAGEMENT_AUTH_TOKEN"
+
+# Metadata
+metadata:
+  created_by: "security_team"
+  created_at: "2024-12-01T00:00:00Z"
+  last_modified: "2024-12-01T00:00:00Z"
+  version: "1.0"
+  notes: |
+    This engagement covers the main web application and APIs.
+    Focus areas: Payment pages, checkout flows, third-party scripts.
+    Special attention to Magecart/skimmer detection.

@@ -1,0 +1,266 @@
+# Custom Workflow Example: Payment Page Assessment
+# =================================================
+# Specialized workflow for assessing payment/checkout pages
+
+id: payment_page_assessment
+name: Payment Page Security Assessment
+description: |
+  Comprehensive security assessment focused on payment pages,
+  checkout flows, and card data handling. Detects Magecart-style
+  attacks, form hijacking, and data exfiltration.
+version: "1.0"
+author: RedTeamAgent
+tags:
+  - payment
+  - checkout
+  - magecart
+  - pci-dss
+  - ecommerce
+
+# Variables that must be provided
+variables:
+  target: ""
+  checkout_path: "/checkout"
+  payment_path: "/payment"
+
+# Workflow settings
+timeout: 3600 # 1 hour
+parallel: false
+max_parallel: 3
+
+# Execution steps
+steps:
+  # Phase 1: Initial Reconnaissance
+  - id: probe_main
+    name: Probe Main Site
+    tool: http_client
+    action: probe
+    params:
+      url: "{target}"
+    timeout: 30
+
+  - id: probe_checkout
+    name: Probe Checkout Page
+    tool: http_client
+    action: probe
+    params:
+      url: "{target}{checkout_path}"
+    depends_on:
+      - probe_main
+    timeout: 30
+
+  - id: probe_payment
+    name: Probe Payment Page
+    tool: http_client
+    action: probe
+    params:
+      url: "{target}{payment_path}"
+    depends_on:
+      - probe_main
+    timeout: 30
+
+  # Phase 2: Technology & Platform Detection
+  - id: tech_detect
+    name: Detect E-commerce Platform
+    tool: tech_detect
+    action: identify_cms
+    params:
+      target: "{target}"
+    depends_on:
+      - probe_main
+    timeout: 60
+
+  - id: payment_tech
+    name: Detect Payment Processors
+    tool: tech_detect
+    action: detect
+    params:
+      target: "{target}{payment_path}"
+    depends_on:
+      - probe_payment
+    timeout: 60
+
+  # Phase 3: Security Header Analysis
+  - id: headers_main
+    name: Security Headers (Main)
+    tool: header_scanner
+    action: scan
+    params:
+      url: "{target}"
+    depends_on:
+      - probe_main
+    timeout: 30
+
+  - id: headers_checkout
+    name: Security Headers (Checkout)
+    tool: header_scanner
+    action: scan
+    params:
+      url: "{target}{checkout_path}"
+    depends_on:
+      - probe_checkout
+    timeout: 30
+
+  - id: headers_payment
+    name: Security Headers (Payment)
+    tool: header_scanner
+    action: scan
+    params:
+      url: "{target}{payment_path}"
+    depends_on:
+      - probe_payment
+    timeout: 30
+
+  # Phase 4: CSP Analysis
+  - id: csp_main
+    name: CSP Analysis (Main)
+    tool: csp_analyzer
+    action: analyze
+    params:
+      target: "{target}"
+    depends_on:
+      - headers_main
+    timeout: 60
+
+  - id: csp_payment
+    name: CSP Analysis (Payment)
+    tool: csp_analyzer
+    action: analyze
+    params:
+      target: "{target}{payment_path}"
+    depends_on:
+      - headers_payment
+    timeout: 60
+
+  - id: csp_bypass
+    name: CSP Bypass Check
+    tool: csp_analyzer
+    action: check_bypass
+    params:
+      target: "{target}{payment_path}"
+    depends_on:
+      - csp_payment
+    timeout: 60
+
+  # Phase 5: SSL/TLS Analysis
+  - id: ssl_scan
+    name: SSL/TLS Configuration
+    tool: ssl_scanner
+    action: full_scan
+    params:
+      target: "{target}"
+    depends_on:
+      - probe_main
+    timeout: 120
+
+  # Phase 6: JavaScript Analysis
+  - id: js_enum_main
+    name: Enumerate Scripts (Main)
+    tool: js_analyzer
+    action: enumerate
+    params:
+      target: "{target}"
+    depends_on:
+      - probe_main
+    timeout: 120
+
+  - id: js_enum_checkout
+    name: Enumerate Scripts (Checkout)
+    tool: js_analyzer
+    action: enumerate
+    params:
+      target: "{target}{checkout_path}"
+    depends_on:
+      - probe_checkout
+    timeout: 120
+
+  - id: js_enum_payment
+    name: Enumerate Scripts (Payment)
+    tool: js_analyzer
+    action: enumerate
+    params:
+      target: "{target}{payment_path}"
+    depends_on:
+      - probe_payment
+    timeout: 120
+
+  # Phase 7: Skimmer Detection
+  - id: skimmer_main
+    name: Skimmer Scan (Main)
+    tool: skimmer_detect
+    action: scan_page
+    params:
+      target: "{target}"
+    depends_on:
+      - js_enum_main
+    timeout: 180
+
+  - id: skimmer_checkout
+    name: Skimmer Scan (Checkout)
+    tool: skimmer_detect
+    action: scan_page
+    params:
+      target: "{target}{checkout_path}"
+    depends_on:
+      - js_enum_checkout
+    timeout: 180
+
+  - id: skimmer_payment
+    name: Skimmer Scan (Payment)
+    tool: skimmer_detect
+    action: scan_page
+    params:
+      target: "{target}{payment_path}"
+    depends_on:
+      - js_enum_payment
+    timeout: 180
+
+  - id: form_analysis
+    name: Payment Form Analysis
+    tool: skimmer_detect
+    action: check_forms
+    params:
+      target: "{target}{payment_path}"
+    depends_on:
+      - skimmer_payment
+    timeout: 120
+
+  - id: checkout_deep
+    name: Checkout Deep Analysis
+    tool: skimmer_detect
+    action: analyze_checkout
+    params:
+      target: "{target}{checkout_path}"
+    depends_on:
+      - skimmer_checkout
+    timeout: 180
+
+  # Phase 8: Deep JavaScript Analysis
+  - id: js_secrets
+    name: Find Exposed Secrets
+    tool: js_analyzer
+    action: find_secrets
+    params:
+      target: "{target}"
+    depends_on:
+      - js_enum_main
+    timeout: 120
+
+  - id: js_endpoints
+    name: Extract API Endpoints
+    tool: js_analyzer
+    action: find_endpoints
+    params:
+      target: "{target}"
+    depends_on:
+      - js_enum_main
+    timeout: 120
+
+# Post-execution actions
+on_complete:
+  - generate_report:
+      format: markdown
+      output: "./reports/payment_assessment_{timestamp}.md"
+  - notify:
+      type: console
+      message: "Payment page assessment completed"

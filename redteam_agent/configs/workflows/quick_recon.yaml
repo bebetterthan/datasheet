@@ -1,0 +1,157 @@
+# Quick Reconnaissance Workflow
+# =============================
+# Fast initial scan for target assessment
+
+name: quick_recon
+description: "Rapid reconnaissance for initial target assessment"
+version: "1.0.0"
+estimated_duration: "5-10 minutes"
+
+# Workflow metadata
+metadata:
+  author: "RedTeam Agent"
+  category: "reconnaissance"
+  risk_level: "low"
+  tags:
+    - "quick"
+    - "non-intrusive"
+    - "recon"
+
+# Input parameters
+parameters:
+  target:
+    type: string
+    required: true
+    description: "Target domain or IP address"
+    validation: "^[a-zA-Z0-9][a-zA-Z0-9-_.]+[a-zA-Z0-9]$"
+
+  include_whois:
+    type: boolean
+    default: true
+    description: "Include WHOIS lookup"
+
+  include_dns:
+    type: boolean
+    default: true
+    description: "Include DNS enumeration"
+
+  include_tech:
+    type: boolean
+    default: true
+    description: "Include technology detection"
+
+# Workflow steps
+steps:
+  - id: validate_target
+    name: "Validate Target"
+    description: "Ensure target is reachable and valid"
+    tool: http_client
+    params:
+      url: "https://{{target}}"
+      method: GET
+      timeout: 10
+      follow_redirects: true
+    continue_on_failure: true
+    outputs:
+      - status_code
+      - headers
+      - response_time
+
+  - id: dns_lookup
+    name: "DNS Enumeration"
+    description: "Retrieve DNS records for target"
+    tool: dns
+    condition: "{{include_dns}}"
+    params:
+      domain: "{{target}}"
+      record_types:
+        - A
+        - AAAA
+        - MX
+        - TXT
+        - NS
+        - CNAME
+        - SOA
+    outputs:
+      - records
+      - nameservers
+
+  - id: whois_lookup
+    name: "WHOIS Lookup"
+    description: "Get domain registration information"
+    tool: whois
+    condition: "{{include_whois}}"
+    params:
+      domain: "{{target}}"
+    outputs:
+      - registrar
+      - creation_date
+      - expiration_date
+      - name_servers
+
+  - id: tech_detect
+    name: "Technology Detection"
+    description: "Identify technologies used by target"
+    tool: tech_detect
+    condition: "{{include_tech}}"
+    depends_on:
+      - validate_target
+    params:
+      url: "https://{{target}}"
+    outputs:
+      - technologies
+      - cms
+      - frameworks
+      - analytics
+
+  - id: header_scan
+    name: "Security Headers Check"
+    description: "Analyze HTTP security headers"
+    tool: header_scanner
+    depends_on:
+      - validate_target
+    params:
+      url: "https://{{target}}"
+    outputs:
+      - missing_headers
+      - security_score
+      - recommendations
+
+  - id: ssl_check
+    name: "SSL/TLS Analysis"
+    description: "Check SSL certificate and configuration"
+    tool: ssl_scanner
+    depends_on:
+      - validate_target
+    params:
+      host: "{{target}}"
+      port: 443
+    outputs:
+      - certificate
+      - protocols
+      - ciphers
+      - vulnerabilities
+
+# Post-processing
+post_process:
+  aggregate_results: true
+  calculate_risk_score: true
+
+# Output configuration
+output:
+  format: "json"
+  include_raw_data: false
+  sections:
+    - summary
+    - dns_info
+    - whois_info
+    - technologies
+    - security_headers
+    - ssl_analysis
+    - risk_assessment
+
+# Reporting
+report:
+  template: "quick_recon_report"
+  include_executive_summary: true
+  severity_threshold: "info"
