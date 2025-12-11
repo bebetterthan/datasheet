@@ -30,23 +30,36 @@ agent:
 # =============================================================================
 
 llm:
-  # Provider type
-  provider: "local" # local, api, openai
+  # Provider type: local, api, openai
+  # - local: Load model locally with transformers + PEFT (requires GPU)
+  # - api: OpenAI-compatible API (vLLM, Ollama, LM Studio, etc.)
+  # - openai: OpenAI's cloud API (GPT-4, GPT-3.5, etc.)
+  provider: "api" # local, api, openai
 
-  # Local model settings (when provider: local)
+  # ===== LOCAL PROVIDER SETTINGS =====
+  # Only used when provider: local
   model_path: "~/redteam-ai-agent/outputs/run_20251130_084846/final_model"
   base_model: "Qwen/Qwen2.5-Coder-7B-Instruct"
 
-  # API settings (when provider: api)
-  api_url: "http://localhost:8000/v1"
-  api_key: null # Set via env: REDTEAM_API_KEY
+  # ===== API PROVIDER SETTINGS =====
+  # Only used when provider: api
+  api_url: "http://localhost:8000/v1" # OpenAI-compatible API endpoint
+  api_key: null # Set via env: REDTEAM_API_KEY or OPENAI_API_KEY
+  model_name: "redteam-v1" # Model name to use (for API/OpenAI)
 
-  # Generation parameters
+  # ===== OPENAI PROVIDER SETTINGS =====
+  # Only used when provider: openai
+  openai_api_key: null # Set via env: OPENAI_API_KEY
+  # model_name: "gpt-4" # or "gpt-4-turbo", "gpt-3.5-turbo"
+
+  # ===== GENERATION PARAMETERS =====
+  # Applied to all providers
   max_tokens: 4096
   temperature: 0.7
   top_p: 0.9
   top_k: 50
   repetition_penalty: 1.1
+  timeout: 60 # API request timeout in seconds
 
   # Request settings
   timeout: 120 # API request timeout
